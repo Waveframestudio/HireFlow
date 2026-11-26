@@ -1,16 +1,19 @@
 import React, { useEffect, useState } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import {
   BarChart3,
   Briefcase,
   CalendarClock,
   Kanban,
   LayoutDashboard,
+  LogOut,
   Search,
   Users,
 } from 'lucide-react';
 import { Logo } from './Logo';
 import { CommandPalette } from './CommandPalette';
+import { ROLE_LABELS, useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
 
 const navItems = [
   { to: '/', label: 'Resumen', icon: LayoutDashboard },
@@ -23,6 +26,15 @@ const navItems = [
 
 export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const { user, logout } = useAuth();
+  const toast = useToast();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    toast.info('Sesión cerrada', 'Hasta pronto.');
+    navigate('/login');
+  };
 
   // Escuchar atajo global Cmd+K / Ctrl+K
   useEffect(() => {
@@ -87,6 +99,34 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
             </NavLink>
           ))}
         </nav>
+
+        {/* Perfil de Usuario y Cierre de Sesión */}
+        {user && (
+          <div className="p-3 border-t border-[#1C456B] bg-[#0E283F]/70">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="w-8 h-8 rounded-lg bg-[#EC623E] text-white flex items-center justify-center text-xs font-bold shrink-0 shadow-sm">
+                  {user.avatarInitials}
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs font-bold text-white truncate">{user.name}</p>
+                  <p className="text-[10px] text-[#A6C3DA] truncate">
+                    {ROLE_LABELS[user.role] || user.role}
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleLogout}
+                title="Cerrar sesión"
+                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-[#1A446C] transition-colors cursor-pointer shrink-0"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        )}
       </aside>
 
       {/* Main Content (Panel derecho) */}

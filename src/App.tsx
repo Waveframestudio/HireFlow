@@ -1,8 +1,10 @@
 import React from 'react';
-import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { HireFlowProvider } from './context/HireFlowContext';
 import { ToastProvider } from './context/ToastContext';
-import { Layout } from './components/Layout';
+import { AuthProvider } from './context/AuthContext';
+import { ProtectedRoute } from './components/ProtectedRoute';
+import { Login } from './pages/Login';
 import { Dashboard } from './pages/Dashboard';
 import { Jobs } from './pages/Jobs';
 import { Pipeline } from './pages/Pipeline';
@@ -12,22 +14,71 @@ import { Reports } from './pages/Reports';
 
 export const App: React.FC = () => {
   return (
-    <HireFlowProvider>
-      <ToastProvider>
-        <BrowserRouter>
-          <Layout>
+    <AuthProvider>
+      <HireFlowProvider>
+        <ToastProvider>
+          <BrowserRouter>
             <Routes>
-              <Route path="/" element={<Dashboard />} />
-              <Route path="/vacantes" element={<Jobs />} />
-              <Route path="/pipeline" element={<Pipeline />} />
-              <Route path="/candidatos" element={<Candidates />} />
-              <Route path="/entrevistas" element={<Interviews />} />
-              <Route path="/reportes" element={<Reports />} />
+              {/* Ruta pública de acceso */}
+              <Route path="/login" element={<Login />} />
+
+              {/* Rutas protegidas */}
+              <Route
+                path="/"
+                element={
+                  <ProtectedRoute>
+                    <Dashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/vacantes"
+                element={
+                  <ProtectedRoute>
+                    <Jobs />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/pipeline"
+                element={
+                  <ProtectedRoute>
+                    <Pipeline />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/candidatos"
+                element={
+                  <ProtectedRoute>
+                    <Candidates />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/entrevistas"
+                element={
+                  <ProtectedRoute>
+                    <Interviews />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/reportes"
+                element={
+                  <ProtectedRoute>
+                    <Reports />
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* Redirección por defecto */}
+              <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
-          </Layout>
-        </BrowserRouter>
-      </ToastProvider>
-    </HireFlowProvider>
+          </BrowserRouter>
+        </ToastProvider>
+      </HireFlowProvider>
+    </AuthProvider>
   );
 };
 

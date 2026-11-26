@@ -18,6 +18,7 @@ import { CompleteInterviewModal } from '../components/CompleteInterviewModal';
 import { EmailModal } from '../components/EmailModal';
 import { EmailTemplateContext, EmailTemplateKey } from '../lib/emailTemplates';
 import { downloadIcsFile, generateGoogleCalendarUrl } from '../lib/calendar';
+import { ROLE_LABELS, useAuth } from '../context/AuthContext';
 
 const TYPE_LABELS: Record<InterviewType, string> = {
   screening: 'Screening Telefónico',
@@ -29,13 +30,16 @@ const TYPE_LABELS: Record<InterviewType, string> = {
 export const Interviews: React.FC = () => {
   const { interviews, applications, candidates, jobs, addInterview, updateInterview } =
     useHireFlow();
+  const { user } = useAuth();
   const toast = useToast();
   const [showModal, setShowModal] = useState(false);
 
   const [applicationId, setApplicationId] = useState('');
   const [type, setType] = useState<InterviewType>('screening');
   const [scheduledAt, setScheduledAt] = useState('');
-  const [interviewer, setInterviewer] = useState('Sofía Lilén Seal (RRHH)');
+  const [interviewer, setInterviewer] = useState(
+    user ? `${user.name} (${ROLE_LABELS[user.role]})` : 'Sofía Lilén Seal (RRHH)'
+  );
   const [locationOrLink, setLocationOrLink] = useState('');
 
   // Estado para el modal de calificación y feedback
