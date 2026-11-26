@@ -24,17 +24,17 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
   const { isSupabaseMode } = useHireFlow();
 
   return (
-    <div className="min-h-screen flex bg-slate-50 text-slate-900">
+    <div className="min-h-screen flex bg-[#FAF4EC] text-[#11314E]">
       {/* Sidebar */}
-      <aside className="w-64 bg-slate-900 text-slate-100 flex flex-col shrink-0">
-        <div className="p-5 border-b border-slate-800">
+      <aside className="w-64 bg-[#11314E] text-slate-100 flex flex-col shrink-0 border-r border-[#0D263D] shadow-md">
+        <div className="p-5 border-b border-[#1C456B]">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-lg bg-indigo-500 flex items-center justify-center font-bold text-white text-lg">
+            <div className="w-9 h-9 rounded-lg bg-[#EC623E] flex items-center justify-center font-bold text-white text-lg shadow-sm">
               HF
             </div>
             <div>
-              <h1 className="font-semibold text-base leading-tight">HireFlow</h1>
-              <p className="text-xs text-slate-400">ATS Interno · RRHH</p>
+              <h1 className="font-semibold text-base leading-tight text-white">HireFlow</h1>
+              <p className="text-xs text-[#A6C3DA]">ATS Interno · RRHH</p>
             </div>
           </div>
         </div>
@@ -48,8 +48,8 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
               className={({ isActive }) =>
                 `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
                   isActive
-                    ? 'bg-indigo-600 text-white'
-                    : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                    ? 'bg-[#1A446C] text-white border-l-4 border-[#EC623E] shadow-sm'
+                    : 'text-slate-300 hover:bg-[#163B5D] hover:text-white'
                 }`
               }
             >
@@ -59,18 +59,18 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           ))}
         </nav>
 
-        <div className="p-4 border-t border-slate-800">
+        <div className="p-4 border-t border-[#1C456B] bg-[#0E2942]/60">
           <div className="flex items-center gap-2 text-xs">
-            <Database className="w-4 h-4 text-slate-400" />
+            <Database className="w-4 h-4 text-[#A6C3DA]" />
             {isSupabaseMode ? (
               <span className="text-emerald-400 font-medium">Supabase Conectado</span>
             ) : (
-              <span className="text-amber-400 font-medium">Modo Demo Local</span>
+              <span className="text-amber-300 font-medium">Modo Demo Local</span>
             )}
           </div>
           {!isSupabaseMode && (
-            <p className="text-[11px] text-slate-400 mt-1">
-              Configurá <code className="text-slate-300">.env</code> para conectar con Supabase.
+            <p className="text-[11px] text-[#A6C3DA] mt-1">
+              Configurá <code className="text-slate-200">.env</code> para conectar con Supabase.
             </p>
           )}
         </div>

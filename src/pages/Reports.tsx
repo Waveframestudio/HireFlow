@@ -14,7 +14,7 @@ import {
 import { useHireFlow } from '../context/HireFlowContext';
 import { PipelineStage, STAGE_LABELS } from '../types';
 
-const PIE_COLORS = ['#4f46e5', '#0ea5e9', '#10b981', '#f59e0b', '#f43f5e'];
+const PIE_COLORS = ['#11314E', '#EC623E', '#1A446C', '#D89F62', '#10B981'];
 
 export const Reports: React.FC = () => {
   const { applications, candidates, jobs } = useHireFlow();
@@ -50,77 +50,95 @@ export const Reports: React.FC = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold text-slate-900">Reportes e Indicadores de Selección</h2>
-        <p className="text-sm text-slate-500 mt-1">
+        <h2 className="text-2xl font-bold text-[#11314E]">Reportes e Indicadores de Selección</h2>
+        <p className="text-sm text-slate-600 mt-1">
           Métricas clave de RRHH para seguimiento de eficiencia, conversión y fuentes de talento.
         </p>
       </div>
 
       {/* Summary KPIs */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-white rounded-xl border border-slate-200 p-5">
-          <p className="text-xs font-medium text-slate-500 uppercase">Tasa de Contratación</p>
-          <p className="text-3xl font-bold text-indigo-600 mt-1">{conversionRate}%</p>
-          <p className="text-xs text-slate-400 mt-1">
+        <div className="bg-white rounded-xl border border-[#EFE3D3] p-5 shadow-xs">
+          <p className="text-xs font-bold text-slate-500 uppercase tracking-wide">Tasa de Contratación</p>
+          <p className="text-3xl font-bold text-[#EC623E] mt-1">{conversionRate}%</p>
+          <p className="text-xs text-slate-500 mt-1">
             {hiredCount} contratados sobre {applications.length} postulaciones
           </p>
         </div>
 
-        <div className="bg-white rounded-xl border border-slate-200 p-5">
-          <p className="text-xs font-medium text-slate-500 uppercase">Vacantes Activas</p>
-          <p className="text-3xl font-bold text-slate-900 mt-1">
+        <div className="bg-white rounded-xl border border-[#EFE3D3] p-5 shadow-xs">
+          <p className="text-xs font-bold text-slate-500 uppercase tracking-wide">Vacantes Activas</p>
+          <p className="text-3xl font-bold text-[#11314E] mt-1">
             {jobs.filter((j) => j.status === 'open').length}
           </p>
-          <p className="text-xs text-slate-400 mt-1">De {jobs.length} búsquedas creadas</p>
+          <p className="text-xs text-slate-500 mt-1">De {jobs.length} búsquedas creadas</p>
         </div>
 
-        <div className="bg-white rounded-xl border border-slate-200 p-5">
-          <p className="text-xs font-medium text-slate-500 uppercase">
+        <div className="bg-white rounded-xl border border-[#EFE3D3] p-5 shadow-xs">
+          <p className="text-xs font-bold text-slate-500 uppercase tracking-wide">
             Candidatos con ATS ≥ 80%
           </p>
-          <p className="text-3xl font-bold text-emerald-600 mt-1">
+          <p className="text-3xl font-bold text-[#11314E] mt-1">
             {applications.filter((a) => a.ats_score >= 80).length}
           </p>
-          <p className="text-xs text-slate-400 mt-1">Alta afinidad con el perfil buscado</p>
+          <p className="text-xs text-slate-500 mt-1">Alta afinidad con el perfil buscado</p>
         </div>
       </div>
 
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-xl border border-slate-200 p-5">
-          <h3 className="font-semibold text-slate-900 mb-4">Embudo de Selección por Etapa</h3>
+        <div className="bg-white rounded-xl border border-[#EFE3D3] p-5 shadow-xs">
+          <h3 className="font-bold text-[#11314E] mb-4">Embudo de Selección por Etapa</h3>
           <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={funnelData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                <XAxis dataKey="name" tick={{ fontSize: 12 }} />
-                <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
-                <Tooltip />
-                <Bar dataKey="cantidad" fill="#4f46e5" radius={[6, 6, 0, 0]} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#EFE3D3" />
+                <XAxis dataKey="name" tick={{ fontSize: 12, fill: '#11314E' }} />
+                <YAxis allowDecimals={false} tick={{ fontSize: 12, fill: '#11314E' }} />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: '#FAF4EC',
+                    borderColor: '#EFE3D3',
+                    borderRadius: '8px',
+                    color: '#11314E',
+                  }}
+                />
+                <Bar dataKey="cantidad" fill="#11314E" radius={[6, 6, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        <div className="bg-white rounded-xl border border-slate-200 p-5">
-          <h3 className="font-semibold text-slate-900 mb-4">Origen de Candidatos (Fuentes)</h3>
+        <div className="bg-white rounded-xl border border-[#EFE3D3] p-5 shadow-xs">
+          <h3 className="font-bold text-[#11314E] mb-4">Fuentes de Reclutamiento</h3>
           <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
                   data={sourceData}
-                  dataKey="value"
-                  nameKey="name"
                   cx="50%"
                   cy="50%"
-                  outerRadius={95}
-                  label={({ name, value }) => `${name} (${value})`}
+                  outerRadius={90}
+                  innerRadius={50}
+                  paddingAngle={4}
+                  dataKey="value"
+                  label={({ name, percent }) =>
+                    `${name} (${((percent || 0) * 100).toFixed(0)}%)`
+                  }
+                  labelLine={false}
                 >
-                  {sourceData.map((_, idx) => (
-                    <Cell key={idx} fill={PIE_COLORS[idx % PIE_COLORS.length]} />
+                  {sourceData.map((_, index) => (
+                    <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
                   ))}
                 </Pie>
-                <Tooltip />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: '#FAF4EC',
+                    borderColor: '#EFE3D3',
+                    borderRadius: '8px',
+                    color: '#11314E',
+                  }}
+                />
               </PieChart>
             </ResponsiveContainer>
           </div>

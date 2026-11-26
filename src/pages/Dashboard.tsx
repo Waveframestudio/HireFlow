@@ -28,71 +28,79 @@ export const Dashboard: React.FC = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold text-slate-900">Panel de Reclutamiento</h2>
-        <p className="text-sm text-slate-500 mt-1">
+        <h2 className="text-2xl font-bold text-[#11314E]">Panel de Reclutamiento</h2>
+        <p className="text-sm text-slate-600 mt-1">
           Vista general de búsquedas activas, filtrado ATS y próximos pasos de selección.
         </p>
       </div>
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white rounded-xl border border-slate-200 p-5">
+        <div className="bg-white rounded-xl border border-[#EFE3D3] p-5 shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-sm text-slate-500">Vacantes Abiertas</span>
-            <Briefcase className="w-5 h-5 text-indigo-600" />
+            <span className="text-sm text-slate-500 font-medium">Vacantes Abiertas</span>
+            <div className="w-8 h-8 rounded-lg bg-[#FAF4EC] flex items-center justify-center">
+              <Briefcase className="w-4 h-4 text-[#11314E]" />
+            </div>
           </div>
-          <p className="text-3xl font-bold mt-2">{openJobs}</p>
-          <p className="text-xs text-slate-400 mt-1">{jobs.length} totales registradas</p>
+          <p className="text-3xl font-bold mt-2 text-[#11314E]">{openJobs}</p>
+          <p className="text-xs text-slate-500 mt-1">{jobs.length} totales registradas</p>
         </div>
 
-        <div className="bg-white rounded-xl border border-slate-200 p-5">
+        <div className="bg-white rounded-xl border border-[#EFE3D3] p-5 shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-sm text-slate-500">Base de Candidatos</span>
-            <Users className="w-5 h-5 text-sky-600" />
+            <span className="text-sm text-slate-500 font-medium">Base de Candidatos</span>
+            <div className="w-8 h-8 rounded-lg bg-[#FAF4EC] flex items-center justify-center">
+              <Users className="w-4 h-4 text-[#1A446C]" />
+            </div>
           </div>
-          <p className="text-3xl font-bold mt-2">{candidates.length}</p>
-          <p className="text-xs text-slate-400 mt-1">{activeApps} en proceso activo</p>
+          <p className="text-3xl font-bold mt-2 text-[#11314E]">{candidates.length}</p>
+          <p className="text-xs text-slate-500 mt-1">{activeApps} en proceso activo</p>
         </div>
 
-        <div className="bg-white rounded-xl border border-slate-200 p-5">
+        <div className="bg-white rounded-xl border border-[#EFE3D3] p-5 shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-sm text-slate-500">Entrevistas Pendientes</span>
-            <CalendarClock className="w-5 h-5 text-amber-600" />
+            <span className="text-sm text-slate-500 font-medium">Entrevistas Pendientes</span>
+            <div className="w-8 h-8 rounded-lg bg-[#FDEEE9] flex items-center justify-center">
+              <CalendarClock className="w-4 h-4 text-[#EC623E]" />
+            </div>
           </div>
-          <p className="text-3xl font-bold mt-2">{scheduledInterviews}</p>
-          <p className="text-xs text-slate-400 mt-1">{interviews.length} registradas</p>
+          <p className="text-3xl font-bold mt-2 text-[#11314E]">{scheduledInterviews}</p>
+          <p className="text-xs text-slate-500 mt-1">{interviews.length} registradas</p>
         </div>
 
-        <div className="bg-white rounded-xl border border-slate-200 p-5">
+        <div className="bg-white rounded-xl border border-[#EFE3D3] p-5 shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-sm text-slate-500">Score ATS Promedio</span>
-            <Sparkles className="w-5 h-5 text-emerald-600" />
+            <span className="text-sm text-slate-500 font-medium">Score ATS Promedio</span>
+            <div className="w-8 h-8 rounded-lg bg-[#FAF4EC] flex items-center justify-center">
+              <Sparkles className="w-4 h-4 text-[#EC623E]" />
+            </div>
           </div>
-          <p className="text-3xl font-bold mt-2">{avgAts}%</p>
-          <p className="text-xs text-slate-400 mt-1 flex items-center gap-1">
-            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> {hiredCount} contratados
+          <p className="text-3xl font-bold mt-2 text-[#11314E]">{avgAts}%</p>
+          <p className="text-xs text-slate-500 mt-1 flex items-center gap-1">
+            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> {hiredCount} contratados
           </p>
         </div>
       </div>
 
       {/* Top ATS Matches */}
-      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-        <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
+      <div className="bg-white rounded-xl border border-[#EFE3D3] overflow-hidden shadow-xs">
+        <div className="px-5 py-4 border-b border-[#EFE3D3] bg-[#FCF2E4]/40 flex items-center justify-between">
           <div>
-            <h3 className="font-semibold text-slate-900">Mejores Matches ATS</h3>
-            <p className="text-xs text-slate-500">
+            <h3 className="font-semibold text-[#11314E]">Mejores Matches ATS</h3>
+            <p className="text-xs text-slate-600">
               Candidatos con mayor afinidad automática según requisitos de cada vacante
             </p>
           </div>
           <Link
             to="/pipeline"
-            className="text-sm font-medium text-indigo-600 hover:text-indigo-700"
+            className="text-sm font-semibold text-[#EC623E] hover:text-[#D95330] transition-colors"
           >
             Ver Pipeline →
           </Link>
         </div>
 
-        <div className="divide-y divide-slate-100">
+        <div className="divide-y divide-[#EFE3D3]/60">
           {topApplications.map((app) => {
             const candidate = candidates.find((c) => c.id === app.candidate_id);
             const job = jobs.find((j) => j.id === app.job_id);
@@ -101,10 +109,10 @@ export const Dashboard: React.FC = () => {
             return (
               <div
                 key={app.id}
-                className="px-5 py-3.5 flex items-center justify-between gap-4 hover:bg-slate-50"
+                className="px-5 py-3.5 flex items-center justify-between gap-4 hover:bg-[#FCF2E4]/30 transition-colors"
               >
                 <div>
-                  <p className="font-medium text-sm text-slate-900">{candidate.full_name}</p>
+                  <p className="font-semibold text-sm text-[#11314E]">{candidate.full_name}</p>
                   <p className="text-xs text-slate-500">
                     {job.title} · {job.department}
                   </p>
@@ -122,10 +130,10 @@ export const Dashboard: React.FC = () => {
                     <span
                       className={`text-sm font-bold ${
                         app.ats_score >= 80
-                          ? 'text-emerald-600'
+                          ? 'text-[#EC623E]'
                           : app.ats_score >= 60
-                          ? 'text-amber-600'
-                          : 'text-rose-600'
+                          ? 'text-[#1A446C]'
+                          : 'text-slate-500'
                       }`}
                     >
                       {app.ats_score}%

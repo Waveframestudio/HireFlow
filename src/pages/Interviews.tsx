@@ -51,15 +51,15 @@ export const Interviews: React.FC = () => {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900">Screening, Entrevistas y Citaciones</h2>
-          <p className="text-sm text-slate-500 mt-1">
+          <h2 className="text-2xl font-bold text-[#11314E]">Screening, Entrevistas y Citaciones</h2>
+          <p className="text-sm text-slate-600 mt-1">
             Coordiná entrevistas con candidatos y registrá devoluciones de cada instancia.
           </p>
         </div>
 
         <button
           onClick={() => setShowModal(true)}
-          className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 py-2.5 rounded-lg transition-colors cursor-pointer"
+          className="inline-flex items-center gap-2 bg-[#EC623E] hover:bg-[#D95330] text-white text-sm font-semibold px-4 py-2.5 rounded-lg transition-colors cursor-pointer shadow-sm"
         >
           <Plus className="w-4 h-4" />
           Agendar Citación
@@ -76,27 +76,27 @@ export const Interviews: React.FC = () => {
           return (
             <div
               key={int.id}
-              className="bg-white rounded-xl border border-slate-200 p-5 flex flex-col justify-between gap-3"
+              className="bg-white rounded-xl border border-[#EFE3D3] p-5 flex flex-col justify-between gap-3 shadow-xs hover:border-[#E2D1BD] transition-all"
             >
               <div>
                 <div className="flex items-start justify-between gap-2">
                   <div>
-                    <span className="text-xs font-medium text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded">
+                    <span className="text-xs font-semibold text-[#11314E] bg-[#FAF4EC] border border-[#EFE3D3] px-2.5 py-0.5 rounded-md">
                       {TYPE_LABELS[int.type]}
                     </span>
-                    <h3 className="font-semibold text-base text-slate-900 mt-2">
+                    <h3 className="font-semibold text-base text-[#11314E] mt-2">
                       {candidate.full_name}
                     </h3>
                     <p className="text-xs text-slate-500">{job.title}</p>
                   </div>
 
                   <span
-                    className={`text-xs font-medium px-2.5 py-1 rounded-full ${
+                    className={`text-xs font-medium px-2.5 py-1 rounded-full border ${
                       int.status === 'completed'
-                        ? 'bg-emerald-50 text-emerald-700'
+                        ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
                         : int.status === 'cancelled'
-                        ? 'bg-rose-50 text-rose-700'
-                        : 'bg-amber-50 text-amber-700'
+                        ? 'bg-rose-50 text-rose-700 border-rose-200'
+                        : 'bg-[#FDEEE9] text-[#EC623E] border-[#FCD5CA]'
                     }`}
                   >
                     {int.status === 'completed'
@@ -107,42 +107,42 @@ export const Interviews: React.FC = () => {
                   </span>
                 </div>
 
-                <div className="mt-3 space-y-1.5 text-xs text-slate-600">
+                <div className="mt-3 space-y-1.5 text-xs text-[#11314E]">
                   <p className="flex items-center gap-2">
-                    <CalendarClock className="w-4 h-4 text-slate-400" />
+                    <CalendarClock className="w-4 h-4 text-[#1A446C]" />
                     {new Date(int.scheduled_at).toLocaleString('es-AR', {
                       dateStyle: 'medium',
                       timeStyle: 'short',
                     })}
                   </p>
                   <p className="flex items-center gap-2">
-                    <Video className="w-4 h-4 text-slate-400" />
+                    <Video className="w-4 h-4 text-[#1A446C]" />
                     {int.location_or_link}
                   </p>
                   <p className="text-slate-500">Entrevistador: {int.interviewer}</p>
                 </div>
 
                 {int.feedback && (
-                  <div className="mt-3 p-3 bg-slate-50 rounded-lg border border-slate-100 text-xs text-slate-700">
+                  <div className="mt-3 p-3 bg-[#FAF4EC] rounded-lg border border-[#EFE3D3] text-xs text-[#11314E]">
                     <div className="flex items-center justify-between mb-1">
                       <span className="font-semibold">Feedback:</span>
                       {int.rating && (
-                        <span className="inline-flex items-center gap-1 text-amber-600 font-semibold">
-                          <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                        <span className="inline-flex items-center gap-1 text-[#EC623E] font-bold">
+                          <Star className="w-3.5 h-3.5 fill-[#EC623E] text-[#EC623E]" />
                           {int.rating}/5
                         </span>
                       )}
                     </div>
-                    <p>{int.feedback}</p>
+                    <p className="text-slate-700">{int.feedback}</p>
                   </div>
                 )}
               </div>
 
               {int.status === 'scheduled' && (
-                <div className="pt-3 border-t border-slate-100 flex justify-end">
+                <div className="pt-3 border-t border-[#EFE3D3]/60 flex justify-end">
                   <button
                     onClick={() => handleComplete(int.id)}
-                    className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-3 py-1.5 rounded-lg cursor-pointer"
+                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-3 py-1.5 rounded-lg cursor-pointer transition-colors"
                   >
                     <CheckCircle2 className="w-3.5 h-3.5" />
                     Cargar Feedback y Completar
@@ -156,13 +156,13 @@ export const Interviews: React.FC = () => {
 
       {/* Modal Agendar Entrevista */}
       {showModal && (
-        <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-xl">
+        <div className="fixed inset-0 bg-[#11314E]/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl border border-[#EFE3D3] max-w-md w-full p-6 shadow-2xl">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold text-lg">Agendar Citación / Entrevista</h3>
+              <h3 className="font-bold text-lg text-[#11314E]">Agendar Citación / Entrevista</h3>
               <button
                 onClick={() => setShowModal(false)}
-                className="text-slate-400 hover:text-slate-600 cursor-pointer"
+                className="text-slate-400 hover:text-[#11314E] cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -170,14 +170,14 @@ export const Interviews: React.FC = () => {
 
             <form onSubmit={handleSubmit} className="space-y-3.5">
               <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">
+                <label className="block text-xs font-semibold text-[#11314E] mb-1">
                   Postulación (Candidato - Vacante) *
                 </label>
                 <select
                   required
                   value={applicationId}
                   onChange={(e) => setApplicationId(e.target.value)}
-                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white"
+                  className="w-full border border-[#EFE3D3] bg-[#FAF4EC]/40 focus:bg-white focus:border-[#EC623E] focus:ring-1 focus:ring-[#EC623E] rounded-lg px-3 py-2 text-sm text-[#11314E]"
                 >
                   <option value="">Seleccionar...</option>
                   {applications.map((a) => {
@@ -194,11 +194,11 @@ export const Interviews: React.FC = () => {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-1">Tipo</label>
+                  <label className="block text-xs font-semibold text-[#11314E] mb-1">Tipo</label>
                   <select
                     value={type}
                     onChange={(e) => setType(e.target.value as InterviewType)}
-                    className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white"
+                    className="w-full border border-[#EFE3D3] bg-[#FAF4EC]/40 focus:bg-white focus:border-[#EC623E] focus:ring-1 focus:ring-[#EC623E] rounded-lg px-3 py-2 text-sm text-[#11314E]"
                   >
                     <option value="screening">Screening</option>
                     <option value="hr">RRHH</option>
@@ -207,7 +207,7 @@ export const Interviews: React.FC = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-1">
+                  <label className="block text-xs font-semibold text-[#11314E] mb-1">
                     Fecha y Hora *
                   </label>
                   <input
@@ -215,32 +215,32 @@ export const Interviews: React.FC = () => {
                     type="datetime-local"
                     value={scheduledAt}
                     onChange={(e) => setScheduledAt(e.target.value)}
-                    className="w-full border border-slate-300 rounded-lg px-2 py-2 text-sm"
+                    className="w-full border border-[#EFE3D3] bg-[#FAF4EC]/40 focus:bg-white focus:border-[#EC623E] focus:ring-1 focus:ring-[#EC623E] rounded-lg px-2 py-2 text-sm text-[#11314E]"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">
+                <label className="block text-xs font-semibold text-[#11314E] mb-1">
                   Entrevistador
                 </label>
                 <input
                   required
                   value={interviewer}
                   onChange={(e) => setInterviewer(e.target.value)}
-                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"
+                  className="w-full border border-[#EFE3D3] bg-[#FAF4EC]/40 focus:bg-white focus:border-[#EC623E] focus:ring-1 focus:ring-[#EC623E] rounded-lg px-3 py-2 text-sm outline-none text-[#11314E]"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">
+                <label className="block text-xs font-semibold text-[#11314E] mb-1">
                   Link de videollamada o lugar físico
                 </label>
                 <input
                   value={locationOrLink}
                   onChange={(e) => setLocationOrLink(e.target.value)}
                   placeholder="https://meet.google.com/... o Sala 1"
-                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"
+                  className="w-full border border-[#EFE3D3] bg-[#FAF4EC]/40 focus:bg-white focus:border-[#EC623E] focus:ring-1 focus:ring-[#EC623E] rounded-lg px-3 py-2 text-sm outline-none text-[#11314E]"
                 />
               </div>
 
@@ -248,13 +248,13 @@ export const Interviews: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg cursor-pointer"
+                  className="px-4 py-2 text-sm text-slate-600 hover:bg-[#FAF4EC] rounded-lg cursor-pointer"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 text-sm font-medium bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg cursor-pointer"
+                  className="px-4 py-2 text-sm font-semibold bg-[#EC623E] hover:bg-[#D95330] text-white rounded-lg cursor-pointer shadow-sm"
                 >
                   Guardar Citación
                 </button>

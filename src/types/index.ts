@@ -79,10 +79,10 @@ export const STAGE_LABELS: Record<PipelineStage, string> = {
 };
 
 export const STAGE_COLORS: Record<PipelineStage, string> = {
-  applied: 'bg-slate-100 text-slate-700 border-slate-200',
-  screening: 'bg-sky-50 text-sky-700 border-sky-200',
-  interview: 'bg-indigo-50 text-indigo-700 border-indigo-200',
-  offer: 'bg-amber-50 text-amber-700 border-amber-200',
-  hired: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+  applied: 'bg-[#FCF2E4] text-[#11314E] border-[#EAD9C4]',
+  screening: 'bg-[#EBF2F7] text-[#11314E] border-[#C2D8E9]',
+  interview: 'bg-[#FDEEE9] text-[#EC623E] border-[#FCD5CA]',
+  offer: 'bg-amber-50 text-amber-800 border-amber-200',
+  hired: 'bg-emerald-50 text-emerald-800 border-emerald-200',
   rejected: 'bg-rose-50 text-rose-700 border-rose-200',
 };

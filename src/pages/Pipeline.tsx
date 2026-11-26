@@ -34,19 +34,19 @@ export const Pipeline: React.FC = () => {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900">Pipeline de Selección (ATS)</h2>
-          <p className="text-sm text-slate-500 mt-1">
+          <h2 className="text-2xl font-bold text-[#11314E]">Pipeline de Selección (ATS)</h2>
+          <p className="text-sm text-slate-600 mt-1">
             Seguimiento de candidatos por etapa con clasificación automática por puntaje ATS.
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-lg px-3 py-2">
-            <Filter className="w-4 h-4 text-slate-400" />
+          <div className="flex items-center gap-2 bg-white border border-[#EFE3D3] rounded-lg px-3 py-2 shadow-xs">
+            <Filter className="w-4 h-4 text-[#1A446C]" />
             <select
               value={selectedJobId}
               onChange={(e) => setSelectedJobId(e.target.value)}
-              className="text-sm bg-transparent outline-none text-slate-700"
+              className="text-sm bg-transparent outline-none text-[#11314E] font-medium"
             >
               <option value="all">Todas las vacantes</option>
               {jobs.map((j) => (
@@ -57,9 +57,9 @@ export const Pipeline: React.FC = () => {
             </select>
           </div>
 
-          <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm">
-            <Sparkles className="w-4 h-4 text-indigo-500" />
-            <span className="text-slate-500">ATS ≥</span>
+          <div className="flex items-center gap-2 bg-white border border-[#EFE3D3] rounded-lg px-3 py-2 text-sm shadow-xs">
+            <Sparkles className="w-4 h-4 text-[#EC623E]" />
+            <span className="text-slate-500 font-medium">ATS ≥</span>
             <input
               type="number"
               min={0}
@@ -67,9 +67,9 @@ export const Pipeline: React.FC = () => {
               step={10}
               value={minScore}
               onChange={(e) => setMinScore(Number(e.target.value))}
-              className="w-14 outline-none font-medium text-slate-800"
+              className="w-14 outline-none font-bold text-[#11314E]"
             />
-            <span className="text-slate-400">%</span>
+            <span className="text-slate-400 font-medium">%</span>
           </div>
         </div>
       </div>
@@ -81,7 +81,7 @@ export const Pipeline: React.FC = () => {
           return (
             <div
               key={stage}
-              className="bg-slate-100/80 rounded-xl p-3 border border-slate-200 min-h-[340px]"
+              className="bg-[#F5EDE1]/60 rounded-xl p-3 border border-[#EFE3D3] min-h-[360px]"
             >
               <div className="flex items-center justify-between mb-3">
                 <span
@@ -89,7 +89,9 @@ export const Pipeline: React.FC = () => {
                 >
                   {STAGE_LABELS[stage]}
                 </span>
-                <span className="text-xs font-semibold text-slate-500">{items.length}</span>
+                <span className="text-xs font-bold text-[#11314E] bg-white/70 px-2 py-0.5 rounded-full border border-[#EFE3D3]">
+                  {items.length}
+                </span>
               </div>
 
               <div className="space-y-2.5">
@@ -101,11 +103,11 @@ export const Pipeline: React.FC = () => {
                   return (
                     <div
                       key={app.id}
-                      className="bg-white rounded-lg border border-slate-200 p-3 shadow-xs space-y-2"
+                      className="bg-white rounded-lg border border-[#EFE3D3] p-3 shadow-xs space-y-2 hover:border-[#E2D1BD] transition-all"
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div>
-                          <p className="font-semibold text-sm text-slate-900 leading-snug">
+                          <p className="font-semibold text-sm text-[#11314E] leading-snug">
                             {candidate.full_name}
                           </p>
                           <p className="text-[11px] text-slate-500">{job.title}</p>
@@ -113,10 +115,10 @@ export const Pipeline: React.FC = () => {
                         <span
                           className={`text-xs font-bold px-1.5 py-0.5 rounded ${
                             app.ats_score >= 80
-                              ? 'bg-emerald-50 text-emerald-700'
+                              ? 'bg-[#FDEEE9] text-[#EC623E] border border-[#FCD5CA]'
                               : app.ats_score >= 60
-                              ? 'bg-amber-50 text-amber-700'
-                              : 'bg-rose-50 text-rose-700'
+                              ? 'bg-[#FAF4EC] text-[#11314E] border border-[#EFE3D3]'
+                              : 'bg-slate-100 text-slate-600 border border-slate-200'
                           }`}
                         >
                           {app.ats_score}%
@@ -128,7 +130,7 @@ export const Pipeline: React.FC = () => {
                           {app.matched_skills.slice(0, 3).map((s) => (
                             <span
                               key={s}
-                              className="text-[10px] bg-indigo-50 text-indigo-700 px-1.5 py-0.5 rounded"
+                              className="text-[10px] bg-[#FAF4EC] text-[#11314E] border border-[#EFE3D3]/80 px-1.5 py-0.5 rounded font-medium"
                             >
                               {s}
                             </span>
@@ -147,7 +149,7 @@ export const Pipeline: React.FC = () => {
                         onChange={(e) =>
                           handleStageChange(app.id, e.target.value as PipelineStage)
                         }
-                        className="w-full text-xs border border-slate-200 rounded-md px-2 py-1 bg-slate-50 text-slate-700"
+                        className="w-full text-xs border border-[#EFE3D3] rounded-md px-2 py-1 bg-[#FAF4EC] text-[#11314E] font-medium"
                       >
                         {STAGES.map((st) => (
                           <option key={st} value={st}>
