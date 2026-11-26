@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Filter, GripVertical, Sparkles } from 'lucide-react';
+import { Download, Filter, GripVertical, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useHireFlow } from '../context/HireFlowContext';
 import { useToast } from '../context/ToastContext';
@@ -8,6 +8,7 @@ import { AnimatedNumber } from '../components/AnimatedNumber';
 import { ScrollReveal } from '../components/ScrollReveal';
 import { RejectCandidateModal } from '../components/RejectCandidateModal';
 import { CandidateDrawer } from '../components/CandidateDrawer';
+import { exportPipelineToCsv } from '../lib/exportCsv';
 
 const STAGES: PipelineStage[] = [
   'applied',
@@ -163,6 +164,19 @@ export const Pipeline: React.FC = () => {
               />
               <span className="text-slate-400 font-medium">%</span>
             </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                exportPipelineToCsv(applications, candidates, jobs);
+                toast.success('Pipeline exportado', 'Se descargó el estado completo del tablero en CSV.');
+              }}
+              className="inline-flex items-center gap-1.5 bg-white hover:bg-[#FAF4EC] text-[#11314E] border border-[#EFE3D3] text-sm font-semibold px-3 py-2 rounded-lg transition-colors cursor-pointer shadow-xs"
+              title="Descargar pipeline completo en formato CSV para Excel"
+            >
+              <Download className="w-4 h-4 text-[#1A446C]" />
+              Exportar CSV
+            </button>
           </div>
         </div>
       </ScrollReveal>

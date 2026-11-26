@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import {
   BarChart3,
@@ -6,9 +6,11 @@ import {
   CalendarClock,
   Kanban,
   LayoutDashboard,
+  Search,
   Users,
 } from 'lucide-react';
 import { Logo } from './Logo';
+import { CommandPalette } from './CommandPalette';
 
 const navItems = [
   { to: '/', label: 'Resumen', icon: LayoutDashboard },
@@ -20,6 +22,20 @@ const navItems = [
 ];
 
 export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+
+  // Escuchar atajo global Cmd+K / Ctrl+K
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setIsSearchOpen((prev) => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   return (
     <div className="min-h-screen flex bg-[#FAF4EC] text-[#11314E]">
       {/* Sidebar (Panel izquierdo) */}
@@ -32,6 +48,24 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
               <p className="text-xs text-[#A6C3DA]">ATS Interno · RRHH</p>
             </div>
           </div>
+        </div>
+
+        {/* Buscador Global Rápido (⌘K / Ctrl+K) */}
+        <div className="px-3 pt-3">
+          <button
+            type="button"
+            onClick={() => setIsSearchOpen(true)}
+            className="w-full flex items-center justify-between px-3 py-2 rounded-lg bg-[#163B5D] hover:bg-[#1C456B] text-slate-300 text-xs transition-colors cursor-pointer border border-[#1F4C75]"
+            title="Buscador global rápido (Ctrl + K / Cmd + K)"
+          >
+            <span className="flex items-center gap-2">
+              <Search className="w-3.5 h-3.5 text-[#A6C3DA]" />
+              <span>Buscar...</span>
+            </span>
+            <kbd className="px-1.5 py-0.5 text-[10px] font-mono bg-[#11314E] text-slate-300 rounded border border-[#235380]">
+              ⌘K
+            </kbd>
+          </button>
         </div>
 
         <nav className="flex-1 p-3 space-y-1">
@@ -71,6 +105,9 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           </a>
         </footer>
       </main>
+
+      {/* Buscador Global CommandPalette */}
+      <CommandPalette isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
     </div>
   );
 };

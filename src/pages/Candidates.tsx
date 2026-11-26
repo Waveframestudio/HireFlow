@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import {
   AlertCircle,
   CheckCircle2,
+  Download,
   FileText,
   Loader2,
   Mail,
@@ -25,6 +26,7 @@ import { ScrollReveal } from '../components/ScrollReveal';
 import { useToast } from '../context/ToastContext';
 import { EmailModal } from '../components/EmailModal';
 import { EmailTemplateContext, EmailTemplateKey } from '../lib/emailTemplates';
+import { exportCandidatesToCsv } from '../lib/exportCsv';
 
 export const Candidates: React.FC = () => {
   const { candidates, jobs, applications, addCandidate, applyCandidateToJob } = useHireFlow();
@@ -241,16 +243,33 @@ export const Candidates: React.FC = () => {
             </p>
           </div>
 
-          <button
-            onClick={() => {
-              setParseStatus(null);
-              setShowModal(true);
-            }}
-            className="inline-flex items-center gap-2 bg-[#EC623E] hover:bg-[#D95330] text-white text-sm font-semibold px-4 py-2.5 rounded-lg transition-colors cursor-pointer shadow-sm hover:shadow-md"
-          >
-            <UserPlus className="w-4 h-4" />
-            Cargar CV / Candidato
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                exportCandidatesToCsv(candidates, applications, jobs);
+                toast.success(
+                  'Base exportada a CSV',
+                  'Se generó el archivo descargable listo para Microsoft Excel y Google Sheets.'
+                );
+              }}
+              className="inline-flex items-center gap-1.5 bg-white hover:bg-[#FAF4EC] text-[#11314E] border border-[#EFE3D3] text-sm font-semibold px-3.5 py-2.5 rounded-lg transition-colors cursor-pointer shadow-2xs hover:shadow-xs"
+            >
+              <Download className="w-4 h-4 text-[#1A446C]" />
+              Exportar CSV
+            </button>
+
+            <button
+              onClick={() => {
+                setParseStatus(null);
+                setShowModal(true);
+              }}
+              className="inline-flex items-center gap-2 bg-[#EC623E] hover:bg-[#D95330] text-white text-sm font-semibold px-4 py-2.5 rounded-lg transition-colors cursor-pointer shadow-sm hover:shadow-md"
+            >
+              <UserPlus className="w-4 h-4" />
+              Cargar CV / Candidato
+            </button>
+          </div>
         </div>
       </ScrollReveal>
 

@@ -1,4 +1,5 @@
 import React from 'react';
+import { Download } from 'lucide-react';
 import {
   Bar,
   BarChart,
@@ -12,14 +13,17 @@ import {
   YAxis,
 } from 'recharts';
 import { useHireFlow } from '../context/HireFlowContext';
+import { useToast } from '../context/ToastContext';
 import { PipelineStage, STAGE_LABELS } from '../types';
 import { AnimatedNumber } from '../components/AnimatedNumber';
 import { ScrollReveal } from '../components/ScrollReveal';
+import { exportInterviewsToCsv, exportPipelineToCsv } from '../lib/exportCsv';
 
 const PIE_COLORS = ['#11314E', '#EC623E', '#1A446C', '#D89F62', '#10B981'];
 
 export const Reports: React.FC = () => {
-  const { applications, candidates, jobs } = useHireFlow();
+  const { applications, candidates, jobs, interviews } = useHireFlow();
+  const toast = useToast();
 
   const stages: PipelineStage[] = [
     'applied',
@@ -52,11 +56,39 @@ export const Reports: React.FC = () => {
   return (
     <div className="space-y-6">
       <ScrollReveal direction="down" duration={0.6}>
-        <div>
-          <h2 className="text-2xl font-bold text-[#11314E]">Reportes e Indicadores de Selección</h2>
-          <p className="text-sm text-slate-600 mt-1">
-            Métricas clave de RRHH para seguimiento de eficiencia, conversión y fuentes de talento.
-          </p>
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h2 className="text-2xl font-bold text-[#11314E]">Reportes e Indicadores de Selección</h2>
+            <p className="text-sm text-slate-600 mt-1">
+              Métricas clave de RRHH para seguimiento de eficiencia, conversión y fuentes de talento.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                exportPipelineToCsv(applications, candidates, jobs);
+                toast.success('Métricas exportadas', 'Se generó el reporte general en formato CSV para Excel.');
+              }}
+              className="inline-flex items-center gap-1.5 bg-white hover:bg-[#FAF4EC] text-[#11314E] border border-[#EFE3D3] text-sm font-semibold px-3.5 py-2 rounded-lg transition-colors cursor-pointer shadow-xs"
+            >
+              <Download className="w-4 h-4 text-[#1A446C]" />
+              Exportar Métricas (CSV)
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                exportInterviewsToCsv(interviews, applications, candidates, jobs);
+                toast.success('Entrevistas exportadas', 'Se descargó el historial completo de entrevistas en CSV.');
+              }}
+              className="inline-flex items-center gap-1.5 bg-white hover:bg-[#FAF4EC] text-[#11314E] border border-[#EFE3D3] text-sm font-semibold px-3.5 py-2 rounded-lg transition-colors cursor-pointer shadow-xs"
+            >
+              <Download className="w-4 h-4 text-[#EC623E]" />
+              Exportar Entrevistas (CSV)
+            </button>
+          </div>
         </div>
       </ScrollReveal>
 
