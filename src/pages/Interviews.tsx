@@ -1,10 +1,23 @@
 import React, { useState } from 'react';
-import { CalendarClock, CheckCircle2, Plus, Star, Video, X } from 'lucide-react';
+import {
+  Calendar,
+  CalendarClock,
+  CheckCircle2,
+  Download,
+  Mail,
+  Plus,
+  Star,
+  Video,
+  X,
+} from 'lucide-react';
 import { useHireFlow } from '../context/HireFlowContext';
 import { useToast } from '../context/ToastContext';
 import { Interview, InterviewType } from '../types';
 import { ScrollReveal } from '../components/ScrollReveal';
 import { CompleteInterviewModal } from '../components/CompleteInterviewModal';
+import { EmailModal } from '../components/EmailModal';
+import { EmailTemplateContext, EmailTemplateKey } from '../lib/emailTemplates';
+import { downloadIcsFile, generateGoogleCalendarUrl } from '../lib/calendar';
 
 const TYPE_LABELS: Record<InterviewType, string> = {
   screening: 'Screening Telefónico',
@@ -27,6 +40,74 @@ export const Interviews: React.FC = () => {
 
   // Estado para el modal de calificación y feedback
   const [completingInterview, setCompletingInterview] = useState<Interview | null>(null);
+
+  // Estado para el modal de plantillas de email
+  const [emailModalData, setEmailModalData] = useState<{
+    isOpen: boolean;
+    template: EmailTemplateKey;
+    context: EmailTemplateContext;
+  } | null>(null);
+
+  const handleOpenGoogleCalendar = (
+    int: Interview,
+    candidate: { full_name: string; email: string; phone?: string },
+    job: { title: string }
+  ) => {
+    const url = generateGoogleCalendarUrl({
+      title: `Entrevista ${TYPE_LABELS[int.type]} - ${candidate.full_name} (${job.title})`,
+      description: `Entrevista de selección para ${job.title}.\nCandidato: ${candidate.full_name} (${candidate.email}, ${candidate.phone || 's/n'}).\nEntrevistador: ${int.interviewer}.\nModalidad / Enlace: ${int.location_or_link}`,
+      location: int.location_or_link,
+      startDate: int.scheduled_at,
+      durationMinutes: 45,
+    });
+    window.open(url, '_blank');
+    toast.info('Google Calendar', 'Se abrió la pestaña para sincronizar la cita.');
+  };
+
+  const handleDownloadIcs = (
+    int: Interview,
+    candidate: { full_name: string },
+    job: { title: string }
+  ) => {
+    downloadIcsFile(
+      {
+        title: `Entrevista ${TYPE_LABELS[int.type]} - ${candidate.full_name}`,
+        description: `Entrevista para la posición ${job.title} en HireFlow ATS.\nEntrevistador: ${int.interviewer}\nLugar / Enlace: ${int.location_or_link}`,
+        location: int.location_or_link,
+        startDate: int.scheduled_at,
+        durationMinutes: 45,
+      },
+      `Entrevista_${candidate.full_name.replace(/\s+/g, '_')}.ics`
+    );
+    toast.success(
+      'Archivo .ics descargado',
+      'Listo para importar en Outlook, Apple Calendar o tu gestor local.'
+    );
+  };
+
+  const handleOpenEmailModal = (
+    int: Interview,
+    candidate: { full_name: string; email: string },
+    job: { title: string },
+    template: EmailTemplateKey = 'interview_invitation'
+  ) => {
+    setEmailModalData({
+      isOpen: true,
+      template,
+      context: {
+        candidateName: candidate.full_name,
+        candidateEmail: candidate.email,
+        jobTitle: job.title,
+        interviewType: TYPE_LABELS[int.type],
+        scheduledDate: new Date(int.scheduled_at).toLocaleString('es-AR', {
+          dateStyle: 'full',
+          timeStyle: 'short',
+        }),
+        locationOrLink: int.location_or_link,
+        interviewer: int.interviewer,
+      },
+    });
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -177,21 +258,67 @@ export const Interviews: React.FC = () => {
                 )}
               </div>
 
-              {int.status === 'scheduled' && (
-                <div className="pt-3 border-t border-[#EFE3D3]/60 flex justify-end">
+              <div className="pt-3 border-t border-[#EFE3D3]/60 flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => handleOpenGoogleCalendar(int, candidate, job)}
+                    title="Añadir a Google Calendar"
+                    className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#11314E] bg-[#FAF4EC] hover:bg-[#EFE3D3] border border-[#EFE3D3] px-2.5 py-1.5 rounded-lg cursor-pointer transition-colors shadow-2xs"
+                  >
+                    <Calendar className="w-3.5 h-3.5 text-[#1A446C]" />
+                    <span>Google Cal</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleDownloadIcs(int, candidate, job)}
+                    title="Descargar archivo universal .ics (Outlook/Apple Calendar)"
+                    className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#11314E] bg-[#FAF4EC] hover:bg-[#EFE3D3] border border-[#EFE3D3] px-2.5 py-1.5 rounded-lg cursor-pointer transition-colors shadow-2xs"
+                  >
+                    <Download className="w-3.5 h-3.5 text-[#1A446C]" />
+                    <span>.ICS</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleOpenEmailModal(int, candidate, job)}
+                    title="Enviar citación / recordatorio por correo"
+                    className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#EC623E] bg-[#FDEEE9] hover:bg-[#FCD5CA] border border-[#FCD5CA] px-2.5 py-1.5 rounded-lg cursor-pointer transition-colors shadow-2xs"
+                  >
+                    <Mail className="w-3.5 h-3.5" />
+                    <span>Email</span>
+                  </button>
+                </div>
+
+                {int.status === 'scheduled' ? (
                   <button
                     onClick={() => setCompletingInterview(int)}
                     className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-3 py-1.5 rounded-lg cursor-pointer transition-colors shadow-2xs"
                   >
                     <CheckCircle2 className="w-3.5 h-3.5" />
-                    Cargar Feedback y Calificar
+                    Calificar
                   </button>
-                </div>
-              )}
+                ) : (
+                  <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded">
+                    ✓ Finalizada
+                  </span>
+                )}
+              </div>
             </div>
           );
         })}
       </ScrollReveal>
+
+      {/* Modal Comunicación por Email */}
+      {emailModalData && (
+        <EmailModal
+          isOpen={emailModalData.isOpen}
+          onClose={() => setEmailModalData(null)}
+          initialTemplate={emailModalData.template}
+          context={emailModalData.context}
+        />
+      )}
 
       {/* Modal Calificar Entrevista */}
       <CompleteInterviewModal

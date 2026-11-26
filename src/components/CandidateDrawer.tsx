@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import {
   Briefcase,
+  Calendar,
   CalendarClock,
   CheckCircle2,
   Copy,
+  Download,
   ExternalLink,
   FileText,
   Mail,
@@ -17,6 +19,9 @@ import {
 } from 'lucide-react';
 import { Application, Candidate, Interview, Job, PipelineStage, STAGE_COLORS, STAGE_LABELS } from '../types';
 import { useToast } from '../context/ToastContext';
+import { downloadIcsFile, generateGoogleCalendarUrl } from '../lib/calendar';
+import { EmailModal } from './EmailModal';
+import { EmailTemplateContext, EmailTemplateKey } from '../lib/emailTemplates';
 
 interface CandidateDrawerProps {
   isOpen: boolean;
@@ -63,6 +68,51 @@ export const CandidateDrawer: React.FC<CandidateDrawerProps> = ({
   };
 
   const expMatch = candidate.years_experience >= job.min_experience_years;
+
+  const [emailModalData, setEmailModalData] = useState<{
+    isOpen: boolean;
+    template: EmailTemplateKey;
+    context: EmailTemplateContext;
+  } | null>(null);
+
+  const handleOpenEmail = (template: EmailTemplateKey = 'interview_invitation') => {
+    setEmailModalData({
+      isOpen: true,
+      template,
+      context: {
+        candidateName: candidate.full_name,
+        candidateEmail: candidate.email,
+        jobTitle: job.title,
+        rejectionReason: application.rejection_reason || undefined,
+      },
+    });
+  };
+
+  const handleOpenGoogleCal = (int: Interview) => {
+    const url = generateGoogleCalendarUrl({
+      title: `Entrevista ${int.type.toUpperCase()} - ${candidate.full_name} (${job.title})`,
+      description: `Entrevista de selección para ${job.title}.\nCandidato: ${candidate.full_name} (${candidate.email}).\nEntrevistador: ${int.interviewer}.\nModalidad / Enlace: ${int.location_or_link}`,
+      location: int.location_or_link,
+      startDate: int.scheduled_at,
+      durationMinutes: 45,
+    });
+    window.open(url, '_blank');
+    toast.info('Google Calendar', 'Se abrió la pestaña para sincronizar la cita.');
+  };
+
+  const handleDownloadIcs = (int: Interview) => {
+    downloadIcsFile(
+      {
+        title: `Entrevista ${int.type.toUpperCase()} - ${candidate.full_name}`,
+        description: `Entrevista para ${job.title} en HireFlow ATS.\nEntrevistador: ${int.interviewer}\nLugar / Enlace: ${int.location_or_link}`,
+        location: int.location_or_link,
+        startDate: int.scheduled_at,
+        durationMinutes: 45,
+      },
+      `Entrevista_${candidate.full_name.replace(/\s+/g, '_')}.ics`
+    );
+    toast.success('Archivo .ics descargado', 'Compatible con Outlook, Apple Calendar y Google.');
+  };
 
   return (
     <div className="fixed inset-0 z-50 overflow-hidden">
@@ -112,6 +162,14 @@ export const CandidateDrawer: React.FC<CandidateDrawerProps> = ({
                 <span className="flex items-center gap-1">
                   <Briefcase className="w-3.5 h-3.5 text-[#1A446C]" /> {candidate.years_experience} años exp.
                 </span>
+                <button
+                  type="button"
+                  onClick={() => handleOpenEmail('interview_invitation')}
+                  className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#EC623E] bg-[#FDEEE9] hover:bg-[#FCD5CA] border border-[#FCD5CA] px-2 py-0.5 rounded-md cursor-pointer transition-colors shadow-2xs"
+                >
+                  <Mail className="w-3 h-3" />
+                  Redactar Email
+                </button>
               </div>
             </div>
           </div>
@@ -368,6 +426,37 @@ export const CandidateDrawer: React.FC<CandidateDrawerProps> = ({
                         {int.feedback}
                       </div>
                     )}
+
+                    {/* Sincronización de calendario y correo */}
+                    <div className="pt-2 border-t border-[#EFE3D3]/60 flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => handleOpenGoogleCal(int)}
+                          className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#11314E] bg-[#FAF4EC] hover:bg-[#EFE3D3] border border-[#EFE3D3] px-2 py-1 rounded cursor-pointer transition-colors"
+                        >
+                          <Calendar className="w-3 h-3 text-[#1A446C]" />
+                          Google Cal
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDownloadIcs(int)}
+                          className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#11314E] bg-[#FAF4EC] hover:bg-[#EFE3D3] border border-[#EFE3D3] px-2 py-1 rounded cursor-pointer transition-colors"
+                        >
+                          <Download className="w-3 h-3 text-[#1A446C]" />
+                          .ICS
+                        </button>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => handleOpenEmail('interview_invitation')}
+                        className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#EC623E] hover:underline cursor-pointer"
+                      >
+                        <Mail className="w-3 h-3" />
+                        Reenviar Invitación
+                      </button>
+                    </div>
                   </div>
                 ))
               )}
@@ -376,13 +465,30 @@ export const CandidateDrawer: React.FC<CandidateDrawerProps> = ({
         </div>
 
         {/* Footer Actions */}
-        <div className="p-4 bg-[#FAF4EC]/80 border-t border-[#EFE3D3] flex items-center justify-between gap-3">
-          <button
-            onClick={() => onMoveStage('rejected')}
-            className="px-3.5 py-2 text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-lg transition-colors cursor-pointer"
-          >
-            Descartar Candidato
-          </button>
+        <div className="p-4 bg-[#FAF4EC]/80 border-t border-[#EFE3D3] flex items-center justify-between gap-3 flex-wrap">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => onMoveStage('rejected')}
+              className="px-3.5 py-2 text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-lg transition-colors cursor-pointer"
+            >
+              Descartar
+            </button>
+            <button
+              onClick={() =>
+                handleOpenEmail(
+                  application.stage === 'offer'
+                    ? 'job_offer'
+                    : application.stage === 'rejected'
+                    ? 'rejection'
+                    : 'interview_invitation'
+                )
+              }
+              className="px-3 py-2 text-xs font-semibold text-[#11314E] bg-white hover:bg-[#FAF4EC] border border-[#EFE3D3] rounded-lg transition-colors cursor-pointer inline-flex items-center gap-1.5"
+            >
+              <Mail className="w-3.5 h-3.5 text-[#EC623E]" />
+              Enviar Email
+            </button>
+          </div>
 
           <div className="flex items-center gap-2">
             {onScheduleInterview && (
@@ -402,6 +508,16 @@ export const CandidateDrawer: React.FC<CandidateDrawerProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Modal de Comunicación por Email */}
+      {emailModalData && (
+        <EmailModal
+          isOpen={emailModalData.isOpen}
+          onClose={() => setEmailModalData(null)}
+          initialTemplate={emailModalData.template}
+          context={emailModalData.context}
+        />
+      )}
     </div>
   );
 };

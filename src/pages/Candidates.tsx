@@ -4,6 +4,7 @@ import {
   CheckCircle2,
   FileText,
   Loader2,
+  Mail,
   Search,
   Sparkles,
   Upload,
@@ -22,6 +23,8 @@ import { extractTextFromPdf } from '../lib/pdfParser';
 import { AnimatedNumber } from '../components/AnimatedNumber';
 import { ScrollReveal } from '../components/ScrollReveal';
 import { useToast } from '../context/ToastContext';
+import { EmailModal } from '../components/EmailModal';
+import { EmailTemplateContext, EmailTemplateKey } from '../lib/emailTemplates';
 
 export const Candidates: React.FC = () => {
   const { candidates, jobs, applications, addCandidate, applyCandidateToJob } = useHireFlow();
@@ -44,6 +47,28 @@ export const Candidates: React.FC = () => {
   const [isParsingPdf, setIsParsingPdf] = useState(false);
   const [parseStatus, setParseStatus] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+
+  // Estado para el modal de envío de email
+  const [emailModalData, setEmailModalData] = useState<{
+    isOpen: boolean;
+    template: EmailTemplateKey;
+    context: EmailTemplateContext;
+  } | null>(null);
+
+  const handleOpenEmailCandidate = (c: { id: string; full_name: string; email: string }) => {
+    const relatedApp = applications.find((a) => a.candidate_id === c.id);
+    const relatedJob = relatedApp ? jobs.find((j) => j.id === relatedApp.job_id) : jobs[0];
+
+    setEmailModalData({
+      isOpen: true,
+      template: 'interview_invitation',
+      context: {
+        candidateName: c.full_name,
+        candidateEmail: c.email,
+        jobTitle: relatedJob ? relatedJob.title : 'Posición en HireFlow',
+      },
+    });
+  };
 
   const handleCvTextChange = (text: string) => {
     setCvText(text);
@@ -269,7 +294,17 @@ export const Candidates: React.FC = () => {
                   <tr key={c.id} className="hover:bg-[#FCF2E4]/30 transition-colors">
                     <td className="py-3.5 px-4">
                       <p className="font-semibold text-[#11314E]">{c.full_name}</p>
-                      <p className="text-xs text-slate-500">{c.email}</p>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <span className="text-xs text-slate-500">{c.email}</span>
+                        <button
+                          type="button"
+                          onClick={() => handleOpenEmailCandidate(c)}
+                          title="Redactar correo a este candidato"
+                          className="p-0.5 rounded text-slate-400 hover:text-[#EC623E] hover:bg-[#FAF4EC] transition-colors cursor-pointer"
+                        >
+                          <Mail className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </td>
                     <td className="py-3.5 px-4">
                       <div className="flex flex-wrap gap-1 max-w-xs">
@@ -589,6 +624,16 @@ export const Candidates: React.FC = () => {
             </form>
           </div>
         </div>
+      )}
+
+      {/* Modal de Comunicación por Email */}
+      {emailModalData && (
+        <EmailModal
+          isOpen={emailModalData.isOpen}
+          onClose={() => setEmailModalData(null)}
+          initialTemplate={emailModalData.template}
+          context={emailModalData.context}
+        />
       )}
     </div>
   );
