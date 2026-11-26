@@ -24,6 +24,7 @@ import { useToast } from '../context/ToastContext';
 import { useHireFlow } from '../context/HireFlowContext';
 import { downloadIcsFile, generateGoogleCalendarUrl } from '../lib/calendar';
 import { formatFullDateTime, formatRelativeTime } from '../lib/formatTime';
+import { usePermissions } from '../lib/permissions';
 import { EmailModal } from './EmailModal';
 import { EmailTemplateContext, EmailTemplateKey } from '../lib/emailTemplates';
 
@@ -58,6 +59,7 @@ export const CandidateDrawer: React.FC<CandidateDrawerProps> = ({
   onScheduleInterview,
 }) => {
   const toast = useToast();
+  const permissions = usePermissions();
   const { activityLogs } = useHireFlow();
   const [activeTab, setActiveTab] = useState<'overview' | 'cv' | 'interviews' | 'history'>('overview');
 
@@ -194,7 +196,16 @@ export const CandidateDrawer: React.FC<CandidateDrawerProps> = ({
           {STAGES.map((stage) => (
             <button
               key={stage}
-              onClick={() => onMoveStage(stage)}
+              onClick={() => {
+                if (permissions.canMoveStage) {
+                  onMoveStage(stage);
+                } else {
+                  toast.info(
+                    'Modo Evaluador',
+                    'Como Hiring Manager podés evaluar entrevistas y revisar perfiles; el cambio de etapas lo realiza RRHH.'
+                  );
+                }
+              }}
               className={`px-2.5 py-1 rounded-md font-semibold transition-all shrink-0 cursor-pointer ${
                 application.stage === stage
                   ? 'bg-[#11314E] text-white shadow-xs'
@@ -560,12 +571,14 @@ export const CandidateDrawer: React.FC<CandidateDrawerProps> = ({
         {/* Footer Actions */}
         <div className="p-4 bg-[#FAF4EC]/80 border-t border-[#EFE3D3] flex items-center justify-between gap-3 flex-wrap">
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => onMoveStage('rejected')}
-              className="px-3.5 py-2 text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-lg transition-colors cursor-pointer"
-            >
-              Descartar
-            </button>
+            {permissions.canMoveStage && (
+              <button
+                onClick={() => onMoveStage('rejected')}
+                className="px-3.5 py-2 text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-lg transition-colors cursor-pointer"
+              >
+                Descartar
+              </button>
+            )}
             <button
               onClick={() =>
                 handleOpenEmail(
@@ -592,12 +605,18 @@ export const CandidateDrawer: React.FC<CandidateDrawerProps> = ({
                 Agendar Entrevista
               </button>
             )}
-            <button
-              onClick={() => onMoveStage(application.stage === 'screening' ? 'interview' : application.stage === 'interview' ? 'offer' : 'hired')}
-              className="px-4 py-2 text-xs font-semibold text-white bg-[#EC623E] hover:bg-[#D95330] rounded-lg transition-colors cursor-pointer shadow-sm"
-            >
-              Avanzar Siguiente Etapa →
-            </button>
+            {permissions.canMoveStage ? (
+              <button
+                onClick={() => onMoveStage(application.stage === 'screening' ? 'interview' : application.stage === 'interview' ? 'offer' : 'hired')}
+                className="px-4 py-2 text-xs font-semibold text-white bg-[#EC623E] hover:bg-[#D95330] rounded-lg transition-colors cursor-pointer shadow-sm"
+              >
+                Avanzar Siguiente Etapa →
+              </button>
+            ) : (
+              <span className="text-xs text-slate-500 font-medium bg-white px-3 py-1.5 rounded-lg border border-[#EFE3D3]">
+                Modo Evaluación (Hiring Manager)
+              </span>
+            )}
           </div>
         </div>
       </div>

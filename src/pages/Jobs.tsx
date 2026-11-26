@@ -11,6 +11,7 @@ import {
   Plus,
   RotateCcw,
   Search,
+  Shield,
   SlidersHorizontal,
   Sparkles,
   Users,
@@ -19,6 +20,7 @@ import {
 import { useHireFlow } from '../context/HireFlowContext';
 import { Application, Job, JobStatus, STAGE_COLORS, STAGE_LABELS } from '../types';
 import { useToast } from '../context/ToastContext';
+import { usePermissions } from '../lib/permissions';
 import { AnimatedNumber } from '../components/AnimatedNumber';
 import { ScrollReveal } from '../components/ScrollReveal';
 import { CandidateDrawer } from '../components/CandidateDrawer';
@@ -34,6 +36,7 @@ export const Jobs: React.FC = () => {
     moveApplicationStage,
   } = useHireFlow();
   const toast = useToast();
+  const permissions = usePermissions();
 
   // Estados de modales
   const [showModal, setShowModal] = useState(false);
@@ -170,13 +173,23 @@ export const Jobs: React.FC = () => {
               para auditar sus postulantes.
             </p>
           </div>
-          <button
-            onClick={() => setShowModal(true)}
-            className="inline-flex items-center gap-2 bg-[#EC623E] hover:bg-[#D95330] text-white text-sm font-semibold px-4 py-2.5 rounded-lg transition-colors cursor-pointer shadow-sm hover:shadow-md"
-          >
-            <Plus className="w-4 h-4" />
-            Nueva Vacante
-          </button>
+          {permissions.canCreateJob ? (
+            <button
+              onClick={() => setShowModal(true)}
+              className="inline-flex items-center gap-2 bg-[#EC623E] hover:bg-[#D95330] text-white text-sm font-semibold px-4 py-2.5 rounded-lg transition-colors cursor-pointer shadow-sm hover:shadow-md"
+            >
+              <Plus className="w-4 h-4" />
+              Nueva Vacante
+            </button>
+          ) : (
+            <span
+              className="inline-flex items-center gap-1.5 text-xs bg-[#FAF4EC] text-[#11314E] border border-[#EFE3D3] px-3 py-2 rounded-lg font-semibold shadow-2xs"
+              title={permissions.roleBadgeDescription}
+            >
+              <Shield className="w-3.5 h-3.5 text-[#1A446C]" />
+              Modo Evaluador · Solo Lectura
+            </span>
+          )}
         </div>
       </ScrollReveal>
 
@@ -369,28 +382,40 @@ export const Jobs: React.FC = () => {
                       {job.department}
                     </span>
 
-                    <select
-                      value={job.status}
-                      onChange={(e) => {
-                        const newStatus = e.target.value as JobStatus;
-                        updateJobStatus(job.id, newStatus);
-                        toast.info(
-                          'Estado de vacante actualizado',
-                          `La búsqueda "${job.title}" ahora está ${
-                            newStatus === 'open'
-                              ? 'abierta'
-                              : newStatus === 'paused'
-                              ? 'pausada'
-                              : 'cerrada'
-                          }.`
-                        );
-                      }}
-                      className={`text-xs border rounded-md px-2 py-0.5 font-semibold cursor-pointer outline-none transition-colors ${statusColors[job.status]}`}
-                    >
-                      <option value="open">Abierta</option>
-                      <option value="paused">Pausada</option>
-                      <option value="closed">Cerrada</option>
-                    </select>
+                    {permissions.canChangeJobStatus ? (
+                      <select
+                        value={job.status}
+                        onChange={(e) => {
+                          const newStatus = e.target.value as JobStatus;
+                          updateJobStatus(job.id, newStatus);
+                          toast.info(
+                            'Estado de vacante actualizado',
+                            `La búsqueda "${job.title}" ahora está ${
+                              newStatus === 'open'
+                                ? 'abierta'
+                                : newStatus === 'paused'
+                                ? 'pausada'
+                                : 'cerrada'
+                            }.`
+                          );
+                        }}
+                        className={`text-xs border rounded-md px-2 py-0.5 font-semibold cursor-pointer outline-none transition-colors ${statusColors[job.status]}`}
+                      >
+                        <option value="open">Abierta</option>
+                        <option value="paused">Pausada</option>
+                        <option value="closed">Cerrada</option>
+                      </select>
+                    ) : (
+                      <span
+                        className={`text-xs border rounded-md px-2.5 py-0.5 font-semibold ${statusColors[job.status]}`}
+                      >
+                        {job.status === 'open'
+                          ? 'Abierta'
+                          : job.status === 'paused'
+                          ? 'Pausada'
+                          : 'Cerrada'}
+                      </span>
+                    )}
                   </div>
 
                   {/* Título de la vacante */}

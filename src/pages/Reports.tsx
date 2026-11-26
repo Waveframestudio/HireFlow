@@ -18,12 +18,14 @@ import { PipelineStage, STAGE_LABELS } from '../types';
 import { AnimatedNumber } from '../components/AnimatedNumber';
 import { ScrollReveal } from '../components/ScrollReveal';
 import { exportInterviewsToCsv, exportPipelineToCsv } from '../lib/exportCsv';
+import { usePermissions } from '../lib/permissions';
 
 const PIE_COLORS = ['#11314E', '#EC623E', '#1A446C', '#D89F62', '#10B981'];
 
 export const Reports: React.FC = () => {
   const { applications, candidates, jobs, interviews } = useHireFlow();
   const toast = useToast();
+  const permissions = usePermissions();
 
   const stages: PipelineStage[] = [
     'applied',
@@ -64,31 +66,33 @@ export const Reports: React.FC = () => {
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => {
-                exportPipelineToCsv(applications, candidates, jobs);
-                toast.success('Métricas exportadas', 'Se generó el reporte general en formato CSV para Excel.');
-              }}
-              className="inline-flex items-center gap-1.5 bg-white hover:bg-[#FAF4EC] text-[#11314E] border border-[#EFE3D3] text-sm font-semibold px-3.5 py-2 rounded-lg transition-colors cursor-pointer shadow-xs"
-            >
-              <Download className="w-4 h-4 text-[#1A446C]" />
-              Exportar Métricas (CSV)
-            </button>
+          {permissions.canExportData && (
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  exportPipelineToCsv(applications, candidates, jobs);
+                  toast.success('Métricas exportadas', 'Se generó el reporte general en formato CSV para Excel.');
+                }}
+                className="inline-flex items-center gap-1.5 bg-white hover:bg-[#FAF4EC] text-[#11314E] border border-[#EFE3D3] text-sm font-semibold px-3.5 py-2 rounded-lg transition-colors cursor-pointer shadow-xs"
+              >
+                <Download className="w-4 h-4 text-[#1A446C]" />
+                Exportar Métricas (CSV)
+              </button>
 
-            <button
-              type="button"
-              onClick={() => {
-                exportInterviewsToCsv(interviews, applications, candidates, jobs);
-                toast.success('Entrevistas exportadas', 'Se descargó el historial completo de entrevistas en CSV.');
-              }}
-              className="inline-flex items-center gap-1.5 bg-white hover:bg-[#FAF4EC] text-[#11314E] border border-[#EFE3D3] text-sm font-semibold px-3.5 py-2 rounded-lg transition-colors cursor-pointer shadow-xs"
-            >
-              <Download className="w-4 h-4 text-[#EC623E]" />
-              Exportar Entrevistas (CSV)
-            </button>
-          </div>
+              <button
+                type="button"
+                onClick={() => {
+                  exportInterviewsToCsv(interviews, applications, candidates, jobs);
+                  toast.success('Entrevistas exportadas', 'Se descargó el historial completo de entrevistas en CSV.');
+                }}
+                className="inline-flex items-center gap-1.5 bg-white hover:bg-[#FAF4EC] text-[#11314E] border border-[#EFE3D3] text-sm font-semibold px-3.5 py-2 rounded-lg transition-colors cursor-pointer shadow-xs"
+              >
+                <Download className="w-4 h-4 text-[#EC623E]" />
+                Exportar Entrevistas (CSV)
+              </button>
+            </div>
+          )}
         </div>
       </ScrollReveal>
 

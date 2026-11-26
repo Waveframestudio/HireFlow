@@ -9,6 +9,7 @@ import { ScrollReveal } from '../components/ScrollReveal';
 import { RejectCandidateModal } from '../components/RejectCandidateModal';
 import { CandidateDrawer } from '../components/CandidateDrawer';
 import { exportPipelineToCsv } from '../lib/exportCsv';
+import { usePermissions } from '../lib/permissions';
 
 const STAGES: PipelineStage[] = [
   'applied',
@@ -22,6 +23,7 @@ const STAGES: PipelineStage[] = [
 export const Pipeline: React.FC = () => {
   const { jobs, candidates, applications, interviews, moveApplicationStage } = useHireFlow();
   const toast = useToast();
+  const permissions = usePermissions();
   const navigate = useNavigate();
 
   const [selectedJobId, setSelectedJobId] = useState<string>('all');
@@ -47,6 +49,14 @@ export const Pipeline: React.FC = () => {
     .sort((a, b) => b.ats_score - a.ats_score);
 
   const handleStageChange = async (appId: string, newStage: PipelineStage) => {
+    if (!permissions.canMoveStage) {
+      toast.info(
+        'Acción restringida',
+        'Tu rol de Hiring Manager permite revisar candidatos y evaluar entrevistas; el avance de etapas en el Pipeline lo realiza RRHH.'
+      );
+      return;
+    }
+
     const app = applications.find((a) => a.id === appId);
     const candidate = candidates.find((c) => c.id === app?.candidate_id);
     const job = jobs.find((j) => j.id === app?.job_id);
@@ -76,6 +86,14 @@ export const Pipeline: React.FC = () => {
 
   // Drag & Drop Handlers
   const handleDragStart = (e: React.DragEvent, appId: string) => {
+    if (!permissions.canMoveStage) {
+      e.preventDefault();
+      toast.info(
+        'Modo Evaluador',
+        'Tu rol de Hiring Manager permite revisar candidatos y evaluar entrevistas; el avance de etapas en el Pipeline lo realiza RRHH.'
+      );
+      return;
+    }
     e.dataTransfer.setData('text/plain', appId);
     e.dataTransfer.effectAllowed = 'move';
     setDraggedAppId(appId);
@@ -165,18 +183,20 @@ export const Pipeline: React.FC = () => {
               <span className="text-slate-400 font-medium">%</span>
             </div>
 
-            <button
-              type="button"
-              onClick={() => {
-                exportPipelineToCsv(applications, candidates, jobs);
-                toast.success('Pipeline exportado', 'Se descargó el estado completo del tablero en CSV.');
-              }}
-              className="inline-flex items-center gap-1.5 bg-white hover:bg-[#FAF4EC] text-[#11314E] border border-[#EFE3D3] text-sm font-semibold px-3 py-2 rounded-lg transition-colors cursor-pointer shadow-xs"
-              title="Descargar pipeline completo en formato CSV para Excel"
-            >
-              <Download className="w-4 h-4 text-[#1A446C]" />
-              Exportar CSV
-            </button>
+            {permissions.canExportData && (
+              <button
+                type="button"
+                onClick={() => {
+                  exportPipelineToCsv(applications, candidates, jobs);
+                  toast.success('Pipeline exportado', 'Se descargó el estado completo del tablero en CSV.');
+                }}
+                className="inline-flex items-center gap-1.5 bg-white hover:bg-[#FAF4EC] text-[#11314E] border border-[#EFE3D3] text-sm font-semibold px-3 py-2 rounded-lg transition-colors cursor-pointer shadow-xs"
+                title="Descargar pipeline completo en formato CSV para Excel"
+              >
+                <Download className="w-4 h-4 text-[#1A446C]" />
+                Exportar CSV
+              </button>
+            )}
           </div>
         </div>
       </ScrollReveal>
@@ -228,7 +248,7 @@ export const Pipeline: React.FC = () => {
                   return (
                     <div
                       key={app.id}
-                      draggable={true}
+                      draggable={permissions.canMoveStage}
                       onDragStart={(e) => handleDragStart(e, app.id)}
                       onDragEnd={handleDragEnd}
                       onClick={() => setDrawerAppId(app.id)}
@@ -258,9 +278,11 @@ export const Pipeline: React.FC = () => {
                           >
                             <AnimatedNumber value={app.ats_score} suffix="%" />
                           </span>
-                          <span className="text-slate-300 group-hover:text-slate-500 cursor-grab active:cursor-grabbing p-0.5">
-                            <GripVertical className="w-3.5 h-3.5" />
-                          </span>
+                          {permissions.canMoveStage && (
+                            <span className="text-slate-300 group-hover:text-slate-500 cursor-grab active:cursor-grabbing p-0.5">
+                              <GripVertical className="w-3.5 h-3.5" />
+                            </span>
+                          )}
                         </div>
                       </div>
 

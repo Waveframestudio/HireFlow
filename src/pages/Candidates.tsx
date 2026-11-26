@@ -24,6 +24,7 @@ import { extractTextFromPdf } from '../lib/pdfParser';
 import { AnimatedNumber } from '../components/AnimatedNumber';
 import { ScrollReveal } from '../components/ScrollReveal';
 import { useToast } from '../context/ToastContext';
+import { usePermissions } from '../lib/permissions';
 import { EmailModal } from '../components/EmailModal';
 import { EmailTemplateContext, EmailTemplateKey } from '../lib/emailTemplates';
 import { exportCandidatesToCsv } from '../lib/exportCsv';
@@ -31,6 +32,7 @@ import { exportCandidatesToCsv } from '../lib/exportCsv';
 export const Candidates: React.FC = () => {
   const { candidates, jobs, applications, addCandidate, applyCandidateToJob } = useHireFlow();
   const toast = useToast();
+  const permissions = usePermissions();
   const [search, setSearch] = useState('');
   const [showModal, setShowModal] = useState(false);
 
@@ -244,31 +246,42 @@ export const Candidates: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => {
-                exportCandidatesToCsv(candidates, applications, jobs);
-                toast.success(
-                  'Base exportada a CSV',
-                  'Se generó el archivo descargable listo para Microsoft Excel y Google Sheets.'
-                );
-              }}
-              className="inline-flex items-center gap-1.5 bg-white hover:bg-[#FAF4EC] text-[#11314E] border border-[#EFE3D3] text-sm font-semibold px-3.5 py-2.5 rounded-lg transition-colors cursor-pointer shadow-2xs hover:shadow-xs"
-            >
-              <Download className="w-4 h-4 text-[#1A446C]" />
-              Exportar CSV
-            </button>
+            {permissions.canExportData && (
+              <button
+                type="button"
+                onClick={() => {
+                  exportCandidatesToCsv(candidates, applications, jobs);
+                  toast.success(
+                    'Base exportada a CSV',
+                    'Se generó el archivo descargable listo para Microsoft Excel y Google Sheets.'
+                  );
+                }}
+                className="inline-flex items-center gap-1.5 bg-white hover:bg-[#FAF4EC] text-[#11314E] border border-[#EFE3D3] text-sm font-semibold px-3.5 py-2.5 rounded-lg transition-colors cursor-pointer shadow-2xs hover:shadow-xs"
+              >
+                <Download className="w-4 h-4 text-[#1A446C]" />
+                Exportar CSV
+              </button>
+            )}
 
-            <button
-              onClick={() => {
-                setParseStatus(null);
-                setShowModal(true);
-              }}
-              className="inline-flex items-center gap-2 bg-[#EC623E] hover:bg-[#D95330] text-white text-sm font-semibold px-4 py-2.5 rounded-lg transition-colors cursor-pointer shadow-sm hover:shadow-md"
-            >
-              <UserPlus className="w-4 h-4" />
-              Cargar CV / Candidato
-            </button>
+            {permissions.canCreateCandidate ? (
+              <button
+                onClick={() => {
+                  setParseStatus(null);
+                  setShowModal(true);
+                }}
+                className="inline-flex items-center gap-2 bg-[#EC623E] hover:bg-[#D95330] text-white text-sm font-semibold px-4 py-2.5 rounded-lg transition-colors cursor-pointer shadow-sm hover:shadow-md"
+              >
+                <UserPlus className="w-4 h-4" />
+                Cargar CV / Candidato
+              </button>
+            ) : (
+              <span
+                className="text-xs bg-[#FAF4EC] text-[#11314E] border border-[#EFE3D3] px-3 py-2 rounded-lg font-medium"
+                title="Carga de CVs reservada a Recursos Humanos y Administradores"
+              >
+                Modo Consulta (Hiring Manager)
+              </span>
+            )}
           </div>
         </div>
       </ScrollReveal>
@@ -352,34 +365,38 @@ export const Candidates: React.FC = () => {
                       )}
                     </td>
                     <td className="py-3.5 px-4">
-                      {availableJobs.length > 0 ? (
-                        <select
-                          defaultValue=""
-                          onChange={(e) => {
-                            if (e.target.value) {
-                              const targetJobId = e.target.value;
-                              const targetJob = availableJobs.find((j) => j.id === targetJobId);
-                              applyCandidateToJob(c.id, targetJobId);
-                              toast.success(
-                                'Candidato postulado a vacante',
-                                `${c.full_name} fue postulado a ${targetJob?.title || 'la búsqueda'}.`
-                              );
-                              e.target.value = '';
-                            }
-                          }}
-                          className="text-xs border border-[#EFE3D3] rounded-md px-2 py-1.5 bg-[#FAF4EC] text-[#11314E] font-medium"
-                        >
-                          <option value="" disabled>
-                            + Postular a...
-                          </option>
-                          {availableJobs.map((j) => (
-                            <option key={j.id} value={j.id}>
-                              {j.title}
+                      {permissions.canCreateCandidate ? (
+                        availableJobs.length > 0 ? (
+                          <select
+                            defaultValue=""
+                            onChange={(e) => {
+                              if (e.target.value) {
+                                const targetJobId = e.target.value;
+                                const targetJob = availableJobs.find((j) => j.id === targetJobId);
+                                applyCandidateToJob(c.id, targetJobId);
+                                toast.success(
+                                  'Candidato postulado a vacante',
+                                  `${c.full_name} fue postulado a ${targetJob?.title || 'la búsqueda'}.`
+                                );
+                                e.target.value = '';
+                              }
+                            }}
+                            className="text-xs border border-[#EFE3D3] rounded-md px-2 py-1.5 bg-[#FAF4EC] text-[#11314E] font-medium"
+                          >
+                            <option value="" disabled>
+                              + Postular a...
                             </option>
-                          ))}
-                        </select>
+                            {availableJobs.map((j) => (
+                              <option key={j.id} value={j.id}>
+                                {j.title}
+                              </option>
+                            ))}
+                          </select>
+                        ) : (
+                          <span className="text-xs text-slate-400">Sin vacantes disponibles</span>
+                        )
                       ) : (
-                        <span className="text-xs text-slate-400">Sin vacantes disponibles</span>
+                        <span className="text-xs text-slate-400 italic">Gestión por RRHH</span>
                       )}
                     </td>
                   </tr>
