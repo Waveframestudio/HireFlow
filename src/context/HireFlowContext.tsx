@@ -61,7 +61,9 @@ export const HireFlowProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [interviews, setInterviews] = useState<Interview[]>(
     isSupabaseConfigured ? [] : initialInterviews
   );
-  const [activityLogs, setActivityLogs] = useState<ActivityLog[]>(initialActivityLogs);
+  const [activityLogs, setActivityLogs] = useState<ActivityLog[]>(
+    isSupabaseConfigured ? [] : initialActivityLogs
+  );
   const [loading, setLoading] = useState<boolean>(isSupabaseConfigured);
 
   const logActivity = (entry: Omit<ActivityLog, 'id' | 'created_at'>) => {
@@ -71,6 +73,10 @@ export const HireFlowProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       created_at: new Date().toISOString(),
     };
     setActivityLogs((prev) => [newLog, ...prev]);
+
+    if (isSupabaseConfigured && supabase) {
+      supabase.from('activity_logs').insert(newLog).then(() => {});
+    }
   };
 
   useEffect(() => {
@@ -80,17 +86,19 @@ export const HireFlowProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const fetchAll = async () => {
       setLoading(true);
       try {
-        const [jobsRes, candRes, appRes, intRes] = await Promise.all([
+        const [jobsRes, candRes, appRes, intRes, actRes] = await Promise.all([
           client.from('jobs').select('*').order('created_at', { ascending: false }),
           client.from('candidates').select('*').order('created_at', { ascending: false }),
           client.from('applications').select('*').order('ats_score', { ascending: false }),
           client.from('interviews').select('*').order('scheduled_at', { ascending: true }),
+          client.from('activity_logs').select('*').order('created_at', { ascending: false }),
         ]);
 
         if (jobsRes.data) setJobs(jobsRes.data as Job[]);
         if (candRes.data) setCandidates(candRes.data as Candidate[]);
         if (appRes.data) setApplications(appRes.data as Application[]);
         if (intRes.data) setInterviews(intRes.data as Interview[]);
+        if (actRes.data) setActivityLogs(actRes.data as ActivityLog[]);
       } finally {
         setLoading(false);
       }
