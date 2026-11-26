@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { CalendarClock, CheckCircle2, Plus, Star, Video, X } from 'lucide-react';
 import { useHireFlow } from '../context/HireFlowContext';
 import { InterviewType } from '../types';
+import { ScrollReveal } from '../components/ScrollReveal';
 
 const TYPE_LABELS: Record<InterviewType, string> = {
   screening: 'Screening Telefónico',
@@ -49,24 +50,26 @@ export const Interviews: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-bold text-[#11314E]">Screening, Entrevistas y Citaciones</h2>
-          <p className="text-sm text-slate-600 mt-1">
-            Coordiná entrevistas con candidatos y registrá devoluciones de cada instancia.
-          </p>
+      <ScrollReveal direction="down" duration={0.6}>
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h2 className="text-2xl font-bold text-[#11314E]">Screening, Entrevistas y Citaciones</h2>
+            <p className="text-sm text-slate-600 mt-1">
+              Coordiná entrevistas con candidatos y registrá devoluciones de cada instancia.
+            </p>
+          </div>
+
+          <button
+            onClick={() => setShowModal(true)}
+            className="inline-flex items-center gap-2 bg-[#EC623E] hover:bg-[#D95330] text-white text-sm font-semibold px-4 py-2.5 rounded-lg transition-colors cursor-pointer shadow-sm hover:shadow-md"
+          >
+            <Plus className="w-4 h-4" />
+            Agendar Citación
+          </button>
         </div>
+      </ScrollReveal>
 
-        <button
-          onClick={() => setShowModal(true)}
-          className="inline-flex items-center gap-2 bg-[#EC623E] hover:bg-[#D95330] text-white text-sm font-semibold px-4 py-2.5 rounded-lg transition-colors cursor-pointer shadow-sm"
-        >
-          <Plus className="w-4 h-4" />
-          Agendar Citación
-        </button>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <ScrollReveal staggerChildren className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {interviews.map((int) => {
           const app = applications.find((a) => a.id === int.application_id);
           const candidate = candidates.find((c) => c.id === app?.candidate_id);
@@ -76,7 +79,7 @@ export const Interviews: React.FC = () => {
           return (
             <div
               key={int.id}
-              className="bg-white rounded-xl border border-[#EFE3D3] p-5 flex flex-col justify-between gap-3 shadow-xs hover:border-[#E2D1BD] transition-all"
+              className="bg-white rounded-xl border border-[#EFE3D3] p-5 flex flex-col justify-between gap-3 shadow-xs hover:shadow-md hover:border-[#E2D1BD] transition-all"
             >
               <div>
                 <div className="flex items-start justify-between gap-2">
@@ -152,7 +155,7 @@ export const Interviews: React.FC = () => {
             </div>
           );
         })}
-      </div>
+      </ScrollReveal>
 
       {/* Modal Agendar Entrevista */}
       {showModal && (

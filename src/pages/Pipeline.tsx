@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Filter, Sparkles } from 'lucide-react';
 import { useHireFlow } from '../context/HireFlowContext';
 import { PipelineStage, STAGE_COLORS, STAGE_LABELS } from '../types';
+import { AnimatedNumber } from '../components/AnimatedNumber';
+import { ScrollReveal } from '../components/ScrollReveal';
 
 const STAGES: PipelineStage[] = [
   'applied',
@@ -32,56 +34,58 @@ export const Pipeline: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-bold text-[#11314E]">Pipeline de Selección (ATS)</h2>
-          <p className="text-sm text-slate-600 mt-1">
-            Seguimiento de candidatos por etapa con clasificación automática por puntaje ATS.
-          </p>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-2 bg-white border border-[#EFE3D3] rounded-lg px-3 py-2 shadow-xs">
-            <Filter className="w-4 h-4 text-[#1A446C]" />
-            <select
-              value={selectedJobId}
-              onChange={(e) => setSelectedJobId(e.target.value)}
-              className="text-sm bg-transparent outline-none text-[#11314E] font-medium"
-            >
-              <option value="all">Todas las vacantes</option>
-              {jobs.map((j) => (
-                <option key={j.id} value={j.id}>
-                  {j.title}
-                </option>
-              ))}
-            </select>
+      <ScrollReveal direction="down" duration={0.6}>
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h2 className="text-2xl font-bold text-[#11314E]">Pipeline de Selección (ATS)</h2>
+            <p className="text-sm text-slate-600 mt-1">
+              Seguimiento de candidatos por etapa con clasificación automática por puntaje ATS.
+            </p>
           </div>
 
-          <div className="flex items-center gap-2 bg-white border border-[#EFE3D3] rounded-lg px-3 py-2 text-sm shadow-xs">
-            <Sparkles className="w-4 h-4 text-[#EC623E]" />
-            <span className="text-slate-500 font-medium">ATS ≥</span>
-            <input
-              type="number"
-              min={0}
-              max={100}
-              step={10}
-              value={minScore}
-              onChange={(e) => setMinScore(Number(e.target.value))}
-              className="w-14 outline-none font-bold text-[#11314E]"
-            />
-            <span className="text-slate-400 font-medium">%</span>
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-2 bg-white border border-[#EFE3D3] rounded-lg px-3 py-2 shadow-xs">
+              <Filter className="w-4 h-4 text-[#1A446C]" />
+              <select
+                value={selectedJobId}
+                onChange={(e) => setSelectedJobId(e.target.value)}
+                className="text-sm bg-transparent outline-none text-[#11314E] font-medium"
+              >
+                <option value="all">Todas las vacantes</option>
+                {jobs.map((j) => (
+                  <option key={j.id} value={j.id}>
+                    {j.title}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex items-center gap-2 bg-white border border-[#EFE3D3] rounded-lg px-3 py-2 text-sm shadow-xs">
+              <Sparkles className="w-4 h-4 text-[#EC623E]" />
+              <span className="text-slate-500 font-medium">ATS ≥</span>
+              <input
+                type="number"
+                min={0}
+                max={100}
+                step={10}
+                value={minScore}
+                onChange={(e) => setMinScore(Number(e.target.value))}
+                className="w-14 outline-none font-bold text-[#11314E]"
+              />
+              <span className="text-slate-400 font-medium">%</span>
+            </div>
           </div>
         </div>
-      </div>
+      </ScrollReveal>
 
       {/* Kanban Board */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-6 gap-3 items-start">
+      <ScrollReveal staggerChildren className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-6 gap-3 items-start">
         {STAGES.map((stage) => {
           const items = filteredApps.filter((a) => a.stage === stage);
           return (
             <div
               key={stage}
-              className="bg-[#F5EDE1]/60 rounded-xl p-3 border border-[#EFE3D3] min-h-[360px]"
+              className="bg-[#F5EDE1]/60 rounded-xl p-3 border border-[#EFE3D3] min-h-[360px] transition-all"
             >
               <div className="flex items-center justify-between mb-3">
                 <span
@@ -90,7 +94,7 @@ export const Pipeline: React.FC = () => {
                   {STAGE_LABELS[stage]}
                 </span>
                 <span className="text-xs font-bold text-[#11314E] bg-white/70 px-2 py-0.5 rounded-full border border-[#EFE3D3]">
-                  {items.length}
+                  <AnimatedNumber value={items.length} />
                 </span>
               </div>
 
@@ -103,7 +107,7 @@ export const Pipeline: React.FC = () => {
                   return (
                     <div
                       key={app.id}
-                      className="bg-white rounded-lg border border-[#EFE3D3] p-3 shadow-xs space-y-2 hover:border-[#E2D1BD] transition-all"
+                      className="bg-white rounded-lg border border-[#EFE3D3] p-3 shadow-xs space-y-2 hover:shadow-md hover:border-[#E2D1BD] transition-all"
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div>
@@ -121,7 +125,7 @@ export const Pipeline: React.FC = () => {
                               : 'bg-slate-100 text-slate-600 border border-slate-200'
                           }`}
                         >
-                          {app.ats_score}%
+                          <AnimatedNumber value={app.ats_score} suffix="%" />
                         </span>
                       </div>
 
@@ -164,7 +168,7 @@ export const Pipeline: React.FC = () => {
             </div>
           );
         })}
-      </div>
+      </ScrollReveal>
     </div>
   );
 };

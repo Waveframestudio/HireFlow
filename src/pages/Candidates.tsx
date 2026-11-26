@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { FileText, Search, Upload, UserPlus, X } from 'lucide-react';
 import { useHireFlow } from '../context/HireFlowContext';
 import { extractSkillsFromText } from '../lib/ats';
+import { AnimatedNumber } from '../components/AnimatedNumber';
+import { ScrollReveal } from '../components/ScrollReveal';
 
 export const Candidates: React.FC = () => {
   const { candidates, jobs, applications, addCandidate, applyCandidateToJob } = useHireFlow();
@@ -87,117 +89,125 @@ export const Candidates: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-bold text-[#11314E]">Base Histórica de Candidatos</h2>
-          <p className="text-sm text-slate-600 mt-1">
-            Recepción de CVs, extracción automática de skills y búsqueda sobre el talento histórico.
-          </p>
-        </div>
+      <ScrollReveal direction="down" duration={0.6}>
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h2 className="text-2xl font-bold text-[#11314E]">Base Histórica de Candidatos</h2>
+            <p className="text-sm text-slate-600 mt-1">
+              Recepción de CVs, extracción automática de skills y búsqueda sobre el talento histórico ({candidates.length} perfiles).
+            </p>
+          </div>
 
-        <button
-          onClick={() => setShowModal(true)}
-          className="inline-flex items-center gap-2 bg-[#EC623E] hover:bg-[#D95330] text-white text-sm font-semibold px-4 py-2.5 rounded-lg transition-colors cursor-pointer shadow-sm"
-        >
-          <UserPlus className="w-4 h-4" />
-          Cargar CV / Candidato
-        </button>
-      </div>
+          <button
+            onClick={() => setShowModal(true)}
+            className="inline-flex items-center gap-2 bg-[#EC623E] hover:bg-[#D95330] text-white text-sm font-semibold px-4 py-2.5 rounded-lg transition-colors cursor-pointer shadow-sm hover:shadow-md"
+          >
+            <UserPlus className="w-4 h-4" />
+            Cargar CV / Candidato
+          </button>
+        </div>
+      </ScrollReveal>
 
       {/* Search bar */}
-      <div className="relative">
-        <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-        <input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Buscar por nombre, skill (ej. React, Excel, Liquidación) o texto del CV..."
-          className="w-full bg-white border border-[#EFE3D3] rounded-xl pl-10 pr-4 py-2.5 text-sm outline-none text-[#11314E] focus:border-[#EC623E] focus:ring-1 focus:ring-[#EC623E] shadow-xs"
-        />
-      </div>
+      <ScrollReveal delay={0.1}>
+        <div className="relative">
+          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Buscar por nombre, skill (ej. React, Excel, Liquidación) o texto del CV..."
+            className="w-full bg-white border border-[#EFE3D3] rounded-xl pl-10 pr-4 py-2.5 text-sm outline-none text-[#11314E] focus:border-[#EC623E] focus:ring-1 focus:ring-[#EC623E] shadow-xs"
+          />
+        </div>
+      </ScrollReveal>
 
       {/* Candidates Table */}
-      <div className="bg-white rounded-xl border border-[#EFE3D3] overflow-x-auto shadow-xs">
-        <table className="w-full text-left border-collapse">
-          <thead>
-            <tr className="border-b border-[#EFE3D3] text-xs uppercase text-[#11314E] bg-[#FCF2E4]/50 font-semibold">
-              <th className="py-3 px-4">Candidato</th>
-              <th className="py-3 px-4">Skills Detectadas</th>
-              <th className="py-3 px-4">Exp.</th>
-              <th className="py-3 px-4">Fuente</th>
-              <th className="py-3 px-4">CV</th>
-              <th className="py-3 px-4">Asignar a Vacante</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-[#EFE3D3]/60 text-sm">
-            {filtered.map((c) => {
-              const appliedJobIds = applications
-                .filter((a) => a.candidate_id === c.id)
-                .map((a) => a.job_id);
-              const availableJobs = jobs.filter(
-                (j) => j.status === 'open' && !appliedJobIds.includes(j.id)
-              );
+      <ScrollReveal delay={0.15}>
+        <div className="bg-white rounded-xl border border-[#EFE3D3] overflow-x-auto shadow-xs">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="border-b border-[#EFE3D3] text-xs uppercase text-[#11314E] bg-[#FCF2E4]/50 font-semibold">
+                <th className="py-3 px-4">Candidato</th>
+                <th className="py-3 px-4">Skills Detectadas</th>
+                <th className="py-3 px-4">Exp.</th>
+                <th className="py-3 px-4">Fuente</th>
+                <th className="py-3 px-4">CV</th>
+                <th className="py-3 px-4">Asignar a Vacante</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[#EFE3D3]/60 text-sm">
+              {filtered.map((c) => {
+                const appliedJobIds = applications
+                  .filter((a) => a.candidate_id === c.id)
+                  .map((a) => a.job_id);
+                const availableJobs = jobs.filter(
+                  (j) => j.status === 'open' && !appliedJobIds.includes(j.id)
+                );
 
-              return (
-                <tr key={c.id} className="hover:bg-[#FCF2E4]/30 transition-colors">
-                  <td className="py-3.5 px-4">
-                    <p className="font-semibold text-[#11314E]">{c.full_name}</p>
-                    <p className="text-xs text-slate-500">{c.email}</p>
-                  </td>
-                  <td className="py-3.5 px-4">
-                    <div className="flex flex-wrap gap-1 max-w-xs">
-                      {c.skills.map((s) => (
-                        <span
-                          key={s}
-                          className="text-xs bg-[#FAF4EC] text-[#11314E] border border-[#EFE3D3]/80 px-2 py-0.5 rounded font-medium"
-                        >
-                          {s}
-                        </span>
-                      ))}
-                    </div>
-                  </td>
-                  <td className="py-3.5 px-4 text-[#11314E] font-medium">{c.years_experience} años</td>
-                  <td className="py-3.5 px-4 text-slate-600">{c.source}</td>
-                  <td className="py-3.5 px-4">
-                    {c.cv_filename ? (
-                      <span className="inline-flex items-center gap-1 text-xs text-[#EC623E] font-semibold">
-                        <FileText className="w-3.5 h-3.5" />
-                        {c.cv_filename}
-                      </span>
-                    ) : (
-                      <span className="text-xs text-slate-400">Sin archivo</span>
-                    )}
-                  </td>
-                  <td className="py-3.5 px-4">
-                    {availableJobs.length > 0 ? (
-                      <select
-                        defaultValue=""
-                        onChange={(e) => {
-                          if (e.target.value) {
-                            applyCandidateToJob(c.id, e.target.value);
-                            e.target.value = '';
-                          }
-                        }}
-                        className="text-xs border border-[#EFE3D3] rounded-md px-2 py-1.5 bg-[#FAF4EC] text-[#11314E] font-medium"
-                      >
-                        <option value="" disabled>
-                          + Postular a...
-                        </option>
-                        {availableJobs.map((j) => (
-                          <option key={j.id} value={j.id}>
-                            {j.title}
-                          </option>
+                return (
+                  <tr key={c.id} className="hover:bg-[#FCF2E4]/30 transition-colors">
+                    <td className="py-3.5 px-4">
+                      <p className="font-semibold text-[#11314E]">{c.full_name}</p>
+                      <p className="text-xs text-slate-500">{c.email}</p>
+                    </td>
+                    <td className="py-3.5 px-4">
+                      <div className="flex flex-wrap gap-1 max-w-xs">
+                        {c.skills.map((s) => (
+                          <span
+                            key={s}
+                            className="text-xs bg-[#FAF4EC] text-[#11314E] border border-[#EFE3D3]/80 px-2 py-0.5 rounded font-medium"
+                          >
+                            {s}
+                          </span>
                         ))}
-                      </select>
-                    ) : (
-                      <span className="text-xs text-slate-400">Sin vacantes disponibles</span>
-                    )}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+                      </div>
+                    </td>
+                    <td className="py-3.5 px-4 text-[#11314E] font-medium">
+                      <AnimatedNumber value={c.years_experience} /> años
+                    </td>
+                    <td className="py-3.5 px-4 text-slate-600">{c.source}</td>
+                    <td className="py-3.5 px-4">
+                      {c.cv_filename ? (
+                        <span className="inline-flex items-center gap-1 text-xs text-[#EC623E] font-semibold">
+                          <FileText className="w-3.5 h-3.5" />
+                          {c.cv_filename}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-slate-400">Sin archivo</span>
+                      )}
+                    </td>
+                    <td className="py-3.5 px-4">
+                      {availableJobs.length > 0 ? (
+                        <select
+                          defaultValue=""
+                          onChange={(e) => {
+                            if (e.target.value) {
+                              applyCandidateToJob(c.id, e.target.value);
+                              e.target.value = '';
+                            }
+                          }}
+                          className="text-xs border border-[#EFE3D3] rounded-md px-2 py-1.5 bg-[#FAF4EC] text-[#11314E] font-medium"
+                        >
+                          <option value="" disabled>
+                            + Postular a...
+                          </option>
+                          {availableJobs.map((j) => (
+                            <option key={j.id} value={j.id}>
+                              {j.title}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <span className="text-xs text-slate-400">Sin vacantes disponibles</span>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </ScrollReveal>
 
       {/* Modal Carga de CV */}
       {showModal && (

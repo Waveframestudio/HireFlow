@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Briefcase, MapPin, Plus, X } from 'lucide-react';
 import { useHireFlow } from '../context/HireFlowContext';
 import { JobStatus } from '../types';
+import { AnimatedNumber } from '../components/AnimatedNumber';
+import { ScrollReveal } from '../components/ScrollReveal';
 
 export const Jobs: React.FC = () => {
   const { jobs, applications, addJob, updateJobStatus } = useHireFlow();
@@ -50,29 +52,31 @@ export const Jobs: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-bold text-[#11314E]">Vacantes y Búsquedas</h2>
-          <p className="text-sm text-slate-600 mt-1">
-            Definí los requisitos y competencias clave que utilizará el motor ATS.
-          </p>
+      <ScrollReveal direction="down" duration={0.6}>
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h2 className="text-2xl font-bold text-[#11314E]">Vacantes y Búsquedas</h2>
+            <p className="text-sm text-slate-600 mt-1">
+              Definí los requisitos y competencias clave que utilizará el motor ATS.
+            </p>
+          </div>
+          <button
+            onClick={() => setShowModal(true)}
+            className="inline-flex items-center gap-2 bg-[#EC623E] hover:bg-[#D95330] text-white text-sm font-semibold px-4 py-2.5 rounded-lg transition-colors cursor-pointer shadow-sm hover:shadow-md"
+          >
+            <Plus className="w-4 h-4" />
+            Nueva Vacante
+          </button>
         </div>
-        <button
-          onClick={() => setShowModal(true)}
-          className="inline-flex items-center gap-2 bg-[#EC623E] hover:bg-[#D95330] text-white text-sm font-semibold px-4 py-2.5 rounded-lg transition-colors cursor-pointer shadow-sm"
-        >
-          <Plus className="w-4 h-4" />
-          Nueva Vacante
-        </button>
-      </div>
+      </ScrollReveal>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <ScrollReveal staggerChildren className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {jobs.map((job) => {
           const count = applications.filter((a) => a.job_id === job.id).length;
           return (
             <div
               key={job.id}
-              className="bg-white rounded-xl border border-[#EFE3D3] p-5 flex flex-col justify-between gap-4 shadow-xs hover:border-[#E2D1BD] transition-all"
+              className="bg-white rounded-xl border border-[#EFE3D3] p-5 flex flex-col justify-between gap-4 shadow-xs hover:shadow-md hover:border-[#E2D1BD] transition-all"
             >
               <div>
                 <div className="flex items-start justify-between gap-2">
@@ -124,13 +128,13 @@ export const Jobs: React.FC = () => {
               <div className="pt-3 border-t border-[#EFE3D3]/60 flex items-center justify-between text-xs text-slate-500">
                 <span>{job.salary_range || 'Salario a convenir'}</span>
                 <span className="font-semibold text-[#11314E] bg-[#FAF4EC] px-2 py-0.5 rounded">
-                  {count} postulados
+                  <AnimatedNumber value={count} /> postulados
                 </span>
               </div>
             </div>
           );
         })}
-      </div>
+      </ScrollReveal>
 
       {/* Modal Nueva Vacante */}
       {showModal && (
