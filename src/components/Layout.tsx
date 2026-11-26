@@ -26,7 +26,7 @@ const navItems = [
 
 export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const { user, logout, loginAsDemo } = useAuth();
+  const { user, logout } = useAuth();
   const toast = useToast();
   const navigate = useNavigate();
 
@@ -130,58 +130,6 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
               >
                 <LogOut className="w-4 h-4" />
               </button>
-            </div>
-
-            {/* Selector rápido de rol para testing / demo */}
-            <div className="mt-2.5 pt-2 border-t border-[#1F4C75] flex items-center justify-between text-[10px]">
-              <span className="text-[#A6C3DA] font-medium">Cambiar rol:</span>
-              <div className="flex items-center gap-1">
-                <button
-                  type="button"
-                  onClick={() => {
-                    loginAsDemo('recruiter');
-                    toast.info('Perfil cambiado', 'Activo como Sofía Seal (RRHH)');
-                  }}
-                  title="Cambiar a Sofía Seal (RRHH)"
-                  className={`px-2 py-0.5 rounded cursor-pointer font-medium transition-colors ${
-                    user.role === 'recruiter'
-                      ? 'bg-[#EC623E] text-white font-bold shadow-xs'
-                      : 'text-slate-300 hover:text-white hover:bg-[#1A446C]'
-                  }`}
-                >
-                  RRHH
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    loginAsDemo('hiring_manager');
-                    toast.info('Perfil cambiado', 'Activo como Lucas Gómez (Manager)');
-                  }}
-                  title="Cambiar a Lucas Gómez (Hiring Manager)"
-                  className={`px-2 py-0.5 rounded cursor-pointer font-medium transition-colors ${
-                    user.role === 'hiring_manager'
-                      ? 'bg-[#EC623E] text-white font-bold shadow-xs'
-                      : 'text-slate-300 hover:text-white hover:bg-[#1A446C]'
-                  }`}
-                >
-                  Manager
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    loginAsDemo('admin');
-                    toast.info('Perfil cambiado', 'Activo como Administrador');
-                  }}
-                  title="Cambiar a Administrador"
-                  className={`px-2 py-0.5 rounded cursor-pointer font-medium transition-colors ${
-                    user.role === 'admin'
-                      ? 'bg-[#EC623E] text-white font-bold shadow-xs'
-                      : 'text-slate-300 hover:text-white hover:bg-[#1A446C]'
-                  }`}
-                >
-                  Admin
-                </button>
-              </div>
             </div>
           </div>
         )}
