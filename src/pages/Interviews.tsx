@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { CalendarClock, CheckCircle2, Plus, Star, Video, X } from 'lucide-react';
 import { useHireFlow } from '../context/HireFlowContext';
-import { InterviewType } from '../types';
+import { useToast } from '../context/ToastContext';
+import { Interview, InterviewType } from '../types';
 import { ScrollReveal } from '../components/ScrollReveal';
+import { CompleteInterviewModal } from '../components/CompleteInterviewModal';
 
 const TYPE_LABELS: Record<InterviewType, string> = {
   screening: 'Screening Telefónico',
@@ -14,6 +16,7 @@ const TYPE_LABELS: Record<InterviewType, string> = {
 export const Interviews: React.FC = () => {
   const { interviews, applications, candidates, jobs, addInterview, updateInterview } =
     useHireFlow();
+  const toast = useToast();
   const [showModal, setShowModal] = useState(false);
 
   const [applicationId, setApplicationId] = useState('');
@@ -21,6 +24,9 @@ export const Interviews: React.FC = () => {
   const [scheduledAt, setScheduledAt] = useState('');
   const [interviewer, setInterviewer] = useState('Sofía Lilén Seal (RRHH)');
   const [locationOrLink, setLocationOrLink] = useState('');
+
+  // Estado para el modal de calificación y feedback
+  const [completingInterview, setCompletingInterview] = useState<Interview | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,18 +41,48 @@ export const Interviews: React.FC = () => {
       status: 'scheduled',
     });
 
+    const app = applications.find((a) => a.id === applicationId);
+    const candidate = candidates.find((c) => c.id === app?.candidate_id);
+
+    toast.success(
+      'Citación agendada con éxito',
+      `Se coordinó la instancia con ${candidate?.full_name || 'el candidato'}.`
+    );
+
     setApplicationId('');
     setScheduledAt('');
     setLocationOrLink('');
     setShowModal(false);
   };
 
-  const handleComplete = async (id: string) => {
-    const feedback = window.prompt('Ingresá el feedback de la entrevista:') || '';
-    const ratingStr = window.prompt('Puntaje del 1 al 5:', '4');
-    const rating = Math.min(5, Math.max(1, Number(ratingStr) || 4));
-    await updateInterview(id, { status: 'completed', feedback, rating });
+  const handleConfirmComplete = async (feedback: string, rating: number) => {
+    if (!completingInterview) return;
+
+    await updateInterview(completingInterview.id, {
+      status: 'completed',
+      feedback,
+      rating,
+    });
+
+    const app = applications.find((a) => a.id === completingInterview.application_id);
+    const candidate = candidates.find((c) => c.id === app?.candidate_id);
+
+    toast.success(
+      'Entrevista completada y calificada',
+      `${candidate?.full_name || 'El candidato'} recibió una valoración de ${rating}/5 estrellas.`
+    );
   };
+
+  // Datos del candidato que se está calificando
+  const completingApp = completingInterview
+    ? applications.find((a) => a.id === completingInterview.application_id)
+    : null;
+  const completingCandidate = completingApp
+    ? candidates.find((c) => c.id === completingApp.candidate_id)
+    : null;
+  const completingJob = completingApp
+    ? jobs.find((j) => j.id === completingApp.job_id)
+    : null;
 
   return (
     <div className="space-y-6">
@@ -144,11 +180,11 @@ export const Interviews: React.FC = () => {
               {int.status === 'scheduled' && (
                 <div className="pt-3 border-t border-[#EFE3D3]/60 flex justify-end">
                   <button
-                    onClick={() => handleComplete(int.id)}
-                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-3 py-1.5 rounded-lg cursor-pointer transition-colors"
+                    onClick={() => setCompletingInterview(int)}
+                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-3 py-1.5 rounded-lg cursor-pointer transition-colors shadow-2xs"
                   >
                     <CheckCircle2 className="w-3.5 h-3.5" />
-                    Cargar Feedback y Completar
+                    Cargar Feedback y Calificar
                   </button>
                 </div>
               )}
@@ -157,11 +193,21 @@ export const Interviews: React.FC = () => {
         })}
       </ScrollReveal>
 
+      {/* Modal Calificar Entrevista */}
+      <CompleteInterviewModal
+        isOpen={completingInterview !== null}
+        onClose={() => setCompletingInterview(null)}
+        candidateName={completingCandidate?.full_name || 'Candidato'}
+        jobTitle={completingJob?.title || 'Vacante'}
+        interviewType={completingInterview ? TYPE_LABELS[completingInterview.type] : ''}
+        onConfirm={handleConfirmComplete}
+      />
+
       {/* Modal Agendar Entrevista */}
       {showModal && (
         <div className="fixed inset-0 bg-[#11314E]/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-xl border border-[#EFE3D3] max-w-md w-full p-6 shadow-2xl">
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-4 border-b border-[#EFE3D3]/70 pb-3">
               <h3 className="font-bold text-lg text-[#11314E]">Agendar Citación / Entrevista</h3>
               <button
                 onClick={() => setShowModal(false)}
@@ -247,7 +293,7 @@ export const Interviews: React.FC = () => {
                 />
               </div>
 
-              <div className="flex justify-end gap-2 pt-2">
+              <div className="flex justify-end gap-2 pt-2 border-t border-[#EFE3D3]/70">
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}

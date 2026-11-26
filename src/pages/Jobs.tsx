@@ -2,11 +2,13 @@ import React, { useState } from 'react';
 import { Briefcase, MapPin, Plus, X } from 'lucide-react';
 import { useHireFlow } from '../context/HireFlowContext';
 import { JobStatus } from '../types';
+import { useToast } from '../context/ToastContext';
 import { AnimatedNumber } from '../components/AnimatedNumber';
 import { ScrollReveal } from '../components/ScrollReveal';
 
 export const Jobs: React.FC = () => {
   const { jobs, applications, addJob, updateJobStatus } = useHireFlow();
+  const toast = useToast();
   const [showModal, setShowModal] = useState(false);
 
   const [title, setTitle] = useState('');
@@ -41,6 +43,8 @@ export const Jobs: React.FC = () => {
       min_experience_years: Number(minExp) || 0,
       salary_range: salaryRange.trim() || undefined,
     });
+
+    toast.success('Vacante creada con éxito', `Se publicó la búsqueda: ${title.trim()}`);
 
     setTitle('');
     setRequiredSkills('');
@@ -88,8 +92,15 @@ export const Jobs: React.FC = () => {
                   </div>
                   <select
                     value={job.status}
-                    onChange={(e) => updateJobStatus(job.id, e.target.value as JobStatus)}
-                    className="text-xs border border-[#EFE3D3] rounded-md px-2 py-1 bg-[#FAF4EC] text-[#11314E] font-medium"
+                    onChange={(e) => {
+                      const newStatus = e.target.value as JobStatus;
+                      updateJobStatus(job.id, newStatus);
+                      toast.info(
+                        'Estado de vacante actualizado',
+                        `La búsqueda "${job.title}" ahora está ${newStatus === 'open' ? 'abierta' : newStatus === 'paused' ? 'pausada' : 'cerrada'}.`
+                      );
+                    }}
+                    className="text-xs border border-[#EFE3D3] rounded-md px-2 py-1 bg-[#FAF4EC] text-[#11314E] font-medium cursor-pointer"
                   >
                     <option value="open">Abierta</option>
                     <option value="paused">Pausada</option>

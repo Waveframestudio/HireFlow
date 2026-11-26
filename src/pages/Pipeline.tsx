@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { Filter, Sparkles } from 'lucide-react';
 import { useHireFlow } from '../context/HireFlowContext';
+import { useToast } from '../context/ToastContext';
 import { PipelineStage, STAGE_COLORS, STAGE_LABELS } from '../types';
 import { AnimatedNumber } from '../components/AnimatedNumber';
 import { ScrollReveal } from '../components/ScrollReveal';
+import { RejectCandidateModal } from '../components/RejectCandidateModal';
 
 const STAGES: PipelineStage[] = [
   'applied',
@@ -16,8 +18,16 @@ const STAGES: PipelineStage[] = [
 
 export const Pipeline: React.FC = () => {
   const { jobs, candidates, applications, moveApplicationStage } = useHireFlow();
+  const toast = useToast();
   const [selectedJobId, setSelectedJobId] = useState<string>('all');
   const [minScore, setMinScore] = useState<number>(0);
+
+  // Estado para el modal de descarte
+  const [rejectingApp, setRejectingApp] = useState<{
+    id: string;
+    candidateName: string;
+    jobTitle: string;
+  } | null>(null);
 
   const filteredApps = applications
     .filter((a) => (selectedJobId === 'all' ? true : a.job_id === selectedJobId))
@@ -25,11 +35,31 @@ export const Pipeline: React.FC = () => {
     .sort((a, b) => b.ats_score - a.ats_score);
 
   const handleStageChange = async (appId: string, newStage: PipelineStage) => {
-    let reason: string | undefined;
+    const app = applications.find((a) => a.id === appId);
+    const candidate = candidates.find((c) => c.id === app?.candidate_id);
+    const job = jobs.find((j) => j.id === app?.job_id);
+
     if (newStage === 'rejected') {
-      reason = window.prompt('Motivo de descarte (opcional):') || undefined;
+      setRejectingApp({
+        id: appId,
+        candidateName: candidate?.full_name || 'Candidato',
+        jobTitle: job?.title || 'Vacante',
+      });
+      return;
     }
-    await moveApplicationStage(appId, newStage, reason);
+
+    await moveApplicationStage(appId, newStage);
+    toast.success(
+      'Etapa actualizada',
+      `${candidate?.full_name || 'El candidato'} avanzó a ${STAGE_LABELS[newStage]}.`
+    );
+  };
+
+  const handleConfirmReject = async (reason: string) => {
+    if (!rejectingApp) return;
+    await moveApplicationStage(rejectingApp.id, 'rejected', reason);
+    toast.info('Candidato descartado', `${rejectingApp.candidateName}: ${reason}`);
+    setRejectingApp(null);
   };
 
   return (
@@ -169,6 +199,15 @@ export const Pipeline: React.FC = () => {
           );
         })}
       </ScrollReveal>
+
+      {/* Modal Descartar Candidato */}
+      <RejectCandidateModal
+        isOpen={rejectingApp !== null}
+        onClose={() => setRejectingApp(null)}
+        candidateName={rejectingApp?.candidateName || ''}
+        jobTitle={rejectingApp?.jobTitle || ''}
+        onConfirm={handleConfirmReject}
+      />
     </div>
   );
 };

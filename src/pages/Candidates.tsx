@@ -21,9 +21,11 @@ import {
 import { extractTextFromPdf } from '../lib/pdfParser';
 import { AnimatedNumber } from '../components/AnimatedNumber';
 import { ScrollReveal } from '../components/ScrollReveal';
+import { useToast } from '../context/ToastContext';
 
 export const Candidates: React.FC = () => {
   const { candidates, jobs, applications, addCandidate, applyCandidateToJob } = useHireFlow();
+  const toast = useToast();
   const [search, setSearch] = useState('');
   const [showModal, setShowModal] = useState(false);
 
@@ -155,6 +157,11 @@ export const Candidates: React.FC = () => {
       },
       applyJobId || undefined,
       cvFile
+    );
+
+    toast.success(
+      'Candidato registrado con éxito',
+      `${fullName.trim()} fue incorporado a la base y evaluado en ATS.`
     );
 
     setFullName('');
@@ -296,7 +303,13 @@ export const Candidates: React.FC = () => {
                           defaultValue=""
                           onChange={(e) => {
                             if (e.target.value) {
-                              applyCandidateToJob(c.id, e.target.value);
+                              const targetJobId = e.target.value;
+                              const targetJob = availableJobs.find((j) => j.id === targetJobId);
+                              applyCandidateToJob(c.id, targetJobId);
+                              toast.success(
+                                'Candidato postulado a vacante',
+                                `${c.full_name} fue postulado a ${targetJob?.title || 'la búsqueda'}.`
+                              );
                               e.target.value = '';
                             }
                           }}
