@@ -49,10 +49,10 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
   }, []);
 
   return (
-    <div className="min-h-screen flex bg-[#FAF4EC] text-[#11314E]">
-      {/* Sidebar (Panel izquierdo) */}
-      <aside className="w-64 bg-[#11314E] text-slate-100 flex flex-col shrink-0 border-r border-[#0D263D] shadow-md">
-        <div className="p-5 border-b border-[#1C456B]">
+    <div className="h-screen w-full flex overflow-hidden bg-[#FAF4EC] text-[#11314E]">
+      {/* Sidebar (Panel izquierdo fijo, sin scroll de página, 100% visible en pantalla) */}
+      <aside className="w-64 h-full bg-[#11314E] text-slate-100 flex flex-col shrink-0 border-r border-[#0D263D] shadow-md select-none z-20">
+        <div className="p-5 border-b border-[#1C456B] shrink-0">
           <div className="flex items-center gap-3">
             <Logo size={36} />
             <div>
@@ -63,7 +63,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
         </div>
 
         {/* Buscador Global Rápido (⌘K / Ctrl+K) */}
-        <div className="px-3 pt-3">
+        <div className="px-3 pt-3 shrink-0">
           <button
             type="button"
             onClick={() => setIsSearchOpen(true)}
@@ -80,7 +80,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           </button>
         </div>
 
-        <nav className="flex-1 p-3 space-y-1">
+        <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
           {navItems.map(({ to, label, icon: Icon }) => (
             <NavLink
               key={to}
@@ -94,15 +94,15 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                 }`
               }
             >
-              <Icon className="w-4 h-4" />
-              {label}
+              <Icon className="w-4 h-4 shrink-0" />
+              <span className="truncate">{label}</span>
             </NavLink>
           ))}
         </nav>
 
         {/* Bloque de Perfil Activo en el Pie del Sidebar */}
         {user && (
-          <div className="p-3.5 border-t border-[#1C456B] bg-[#0E283F]">
+          <div className="p-3.5 border-t border-[#1C456B] bg-[#0E283F] shrink-0">
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-2.5 min-w-0">
                 <div className="relative shrink-0">
@@ -135,11 +135,13 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
         )}
       </aside>
 
-      {/* Main Content (Panel derecho) */}
-      <main id="main-content-scroll" className="flex-1 flex flex-col min-h-screen overflow-y-auto">
-        <div className="flex-1 max-w-7xl w-full mx-auto p-6 lg:p-8">{children}</div>
+      {/* Main Content (Panel derecho con scroll independiente) */}
+      <div id="main-content-scroll" className="flex-1 flex flex-col h-full overflow-y-auto overflow-x-hidden min-w-0">
+        <main className="flex-1">
+          <div className="max-w-7xl w-full mx-auto p-6 lg:p-8">{children}</div>
+        </main>
 
-        <footer className="py-4 px-6 lg:px-8 border-t border-[#EFE3D3] text-center text-xs text-slate-500 bg-[#FAF4EC]/80">
+        <footer className="py-4 px-6 lg:px-8 border-t border-[#EFE3D3] text-center text-xs text-slate-500 bg-[#FAF4EC]/80 shrink-0">
           © 2026 HireFlow todos los derechos reservados. | Desarrollado por{' '}
           <a
             href="https://waveframe.com.ar/"
@@ -150,7 +152,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
             WaveFrame Studio
           </a>
         </footer>
-      </main>
+      </div>
 
       {/* Buscador Global CommandPalette */}
       <CommandPalette isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
