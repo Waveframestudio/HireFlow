@@ -4,12 +4,10 @@ import {
   BarChart3,
   Briefcase,
   CalendarClock,
-  Database,
   Kanban,
   LayoutDashboard,
   Users,
 } from 'lucide-react';
-import { useHireFlow } from '../context/HireFlowContext';
 
 const navItems = [
   { to: '/', label: 'Resumen', icon: LayoutDashboard },
@@ -21,8 +19,6 @@ const navItems = [
 ];
 
 export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { isSupabaseMode } = useHireFlow();
-
   return (
     <div className="min-h-screen flex bg-[#FAF4EC] text-[#11314E]">
       {/* Sidebar */}
@@ -58,27 +54,22 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
             </NavLink>
           ))}
         </nav>
-
-        <div className="p-4 border-t border-[#1C456B] bg-[#0E2942]/60">
-          <div className="flex items-center gap-2 text-xs">
-            <Database className="w-4 h-4 text-[#A6C3DA]" />
-            {isSupabaseMode ? (
-              <span className="text-emerald-400 font-medium">Supabase Conectado</span>
-            ) : (
-              <span className="text-amber-300 font-medium">Modo Demo Local</span>
-            )}
-          </div>
-          {!isSupabaseMode && (
-            <p className="text-[11px] text-[#A6C3DA] mt-1">
-              Configurá <code className="text-slate-200">.env</code> para conectar con Supabase.
-            </p>
-          )}
-        </div>
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-y-auto">
-        <div className="max-w-7xl mx-auto p-6 lg:p-8">{children}</div>
+      <main className="flex-1 flex flex-col min-h-screen overflow-y-auto">
+        <div className="flex-1 max-w-7xl w-full mx-auto p-6 lg:p-8">{children}</div>
+        <footer className="py-4 px-6 lg:px-8 border-t border-[#EFE3D3] text-center text-xs text-slate-500 bg-[#FAF4EC]/80">
+          © 2026 HireFlow todos los derechos reservados. | Desarrollado por{' '}
+          <a
+            href="https://waveframe.com.ar/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-bold underline text-[#11314E] hover:text-[#EC623E] transition-colors"
+          >
+            WaveFrame Studio
+          </a>
+        </footer>
       </main>
     </div>
   );
