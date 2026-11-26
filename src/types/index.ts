@@ -86,3 +86,23 @@ export const STAGE_COLORS: Record<PipelineStage, string> = {
   hired: 'bg-emerald-50 text-emerald-800 border-emerald-200',
   rejected: 'bg-rose-50 text-rose-700 border-rose-200',
 };
+
+export type ActivityActionType =
+  | 'stage_changed'
+  | 'interview_scheduled'
+  | 'interview_completed'
+  | 'candidate_created'
+  | 'candidate_rejected';
+
+export interface ActivityLog {
+  id: string;
+  created_at: string;
+  user_name: string;
+  user_role: string;
+  action_type: ActivityActionType;
+  title: string;
+  details?: string;
+  candidate_id?: string;
+  candidate_name?: string;
+  job_title?: string;
+}

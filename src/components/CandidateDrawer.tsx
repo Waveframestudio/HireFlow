@@ -4,10 +4,12 @@ import {
   Calendar,
   CalendarClock,
   CheckCircle2,
+  Clock,
   Copy,
   Download,
   ExternalLink,
   FileText,
+  History,
   Mail,
   MapPin,
   Phone,
@@ -19,7 +21,9 @@ import {
 } from 'lucide-react';
 import { Application, Candidate, Interview, Job, PipelineStage, STAGE_COLORS, STAGE_LABELS } from '../types';
 import { useToast } from '../context/ToastContext';
+import { useHireFlow } from '../context/HireFlowContext';
 import { downloadIcsFile, generateGoogleCalendarUrl } from '../lib/calendar';
+import { formatFullDateTime, formatRelativeTime } from '../lib/formatTime';
 import { EmailModal } from './EmailModal';
 import { EmailTemplateContext, EmailTemplateKey } from '../lib/emailTemplates';
 
@@ -54,11 +58,13 @@ export const CandidateDrawer: React.FC<CandidateDrawerProps> = ({
   onScheduleInterview,
 }) => {
   const toast = useToast();
-  const [activeTab, setActiveTab] = useState<'overview' | 'cv' | 'interviews'>('overview');
+  const { activityLogs } = useHireFlow();
+  const [activeTab, setActiveTab] = useState<'overview' | 'cv' | 'interviews' | 'history'>('overview');
 
   if (!isOpen || !application || !candidate || !job) return null;
 
   const appInterviews = interviews.filter((i) => i.application_id === application.id);
+  const candidateLogs = activityLogs.filter((a) => a.candidate_id === candidate.id);
 
   const handleCopyCvText = () => {
     if (candidate.cv_text) {
@@ -233,6 +239,20 @@ export const CandidateDrawer: React.FC<CandidateDrawerProps> = ({
             Entrevistas
             <span className="text-xs bg-[#FAF4EC] text-[#11314E] px-1.5 py-0.2 rounded-full border border-[#EFE3D3]">
               {appInterviews.length}
+            </span>
+          </button>
+          <button
+            onClick={() => setActiveTab('history')}
+            className={`py-3 border-b-2 transition-colors cursor-pointer flex items-center gap-1.5 ${
+              activeTab === 'history'
+                ? 'border-[#EC623E] text-[#11314E]'
+                : 'border-transparent hover:text-[#11314E]'
+            }`}
+          >
+            <History className="w-3.5 h-3.5" />
+            Historial & Auditoría
+            <span className="text-xs bg-[#FAF4EC] text-[#11314E] px-1.5 py-0.2 rounded-full border border-[#EFE3D3]">
+              {candidateLogs.length}
             </span>
           </button>
         </div>
@@ -459,6 +479,79 @@ export const CandidateDrawer: React.FC<CandidateDrawerProps> = ({
                     </div>
                   </div>
                 ))
+              )}
+            </div>
+          )}
+
+          {activeTab === 'history' && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="font-bold text-sm text-[#11314E]">Historial & Trazabilidad de Auditoría</h4>
+                  <p className="text-xs text-slate-500">
+                    Registro inmutable de movimientos de etapa, agendamientos y evaluaciones.
+                  </p>
+                </div>
+                <span className="text-xs bg-[#FAF4EC] text-[#11314E] px-2.5 py-1 rounded-full border border-[#EFE3D3] font-medium">
+                  {candidateLogs.length} {candidateLogs.length === 1 ? 'evento' : 'eventos'}
+                </span>
+              </div>
+
+              {candidateLogs.length === 0 ? (
+                <div className="text-center py-12 bg-[#FAF4EC]/40 rounded-xl border border-dashed border-[#EFE3D3]">
+                  <Clock className="w-8 h-8 text-slate-400 mx-auto mb-2" />
+                  <p className="text-sm font-semibold text-[#11314E]">Sin actividad registrada aún</p>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Los cambios de etapa y notas aparecerán aquí automáticamente en tiempo real.
+                  </p>
+                </div>
+              ) : (
+                <div className="relative pl-6 space-y-5 before:absolute before:left-2.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-[#EFE3D3]">
+                  {candidateLogs.map((log) => (
+                    <div key={log.id} className="relative group">
+                      {/* Timeline dot */}
+                      <div className="absolute -left-[27px] top-1.5 w-3.5 h-3.5 rounded-full bg-white border-2 border-[#EC623E] group-hover:scale-125 transition-transform" />
+
+                      <div className="bg-white rounded-xl border border-[#EFE3D3] p-4 shadow-2xs hover:shadow-xs transition-shadow space-y-1.5">
+                        <div className="flex items-center justify-between gap-2 flex-wrap">
+                          <div className="flex items-center gap-2">
+                            <div className="w-6 h-6 rounded-full bg-[#11314E] text-white text-[10px] font-bold flex items-center justify-center shrink-0">
+                              {log.user_name
+                                .split(' ')
+                                .map((n) => n[0])
+                                .slice(0, 2)
+                                .join('')
+                                .toUpperCase()}
+                            </div>
+                            <span className="text-xs font-semibold text-[#11314E]">
+                              {log.user_name}
+                            </span>
+                            <span className="text-[11px] text-slate-500">
+                              ({log.user_role})
+                            </span>
+                          </div>
+
+                          <span
+                            className="text-[11px] text-slate-500 font-medium"
+                            title={formatFullDateTime(log.created_at)}
+                          >
+                            {formatRelativeTime(log.created_at)}
+                          </span>
+                        </div>
+
+                        <p className="text-xs font-semibold text-[#11314E]">
+                          {log.title}
+                        </p>
+
+                        {log.details && (
+                          <p className="text-xs text-slate-600 bg-[#FAF4EC]/60 p-2.5 rounded-lg border border-[#EFE3D3]/60 leading-relaxed">
+                            {log.details}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               )}
             </div>
           )}

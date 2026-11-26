@@ -1,4 +1,4 @@
-import { Application, Candidate, Interview, Job } from '../types';
+import { ActivityLog, Application, Candidate, Interview, Job } from '../types';
 
 export const initialJobs: Job[] = [
   {
@@ -220,5 +220,56 @@ export const initialInterviews: Interview[] = [
     feedback: 'Excelente fit cultural y dominio técnico de liquidación e indicadores.',
     rating: 5,
     created_at: '2026-11-17T09:00:00Z',
+  },
+];
+
+export const initialActivityLogs: ActivityLog[] = [
+  {
+    id: 'act-1',
+    created_at: new Date(Date.now() - 15 * 60 * 1000).toISOString(),
+    user_name: 'Sofía Seal',
+    user_role: 'Recruiter RRHH',
+    action_type: 'stage_changed',
+    title: 'Movió a Valentina Gómez a Entrevista Técnica',
+    details: 'Afinidad ATS 100%. Requisitos de React y TypeScript validados.',
+    candidate_id: 'cand-1',
+    candidate_name: 'Valentina Gómez',
+    job_title: 'Desarrollador Fullstack React',
+  },
+  {
+    id: 'act-2',
+    created_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+    user_name: 'Lucas Gómez',
+    user_role: 'Hiring Manager',
+    action_type: 'interview_completed',
+    title: 'Completó y calificó la entrevista de Lucas Pereyra con 5★',
+    details: 'Fit cultural excelente, perfil comercial y sólidas referencias.',
+    candidate_id: 'cand-3',
+    candidate_name: 'Lucas Pereyra',
+    job_title: 'Ejecutivo Comercial B2B',
+  },
+  {
+    id: 'act-3',
+    created_at: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
+    user_name: 'Sofía Seal',
+    user_role: 'Recruiter RRHH',
+    action_type: 'stage_changed',
+    title: 'Avanzó a Camila Fernández a etapa de Oferta',
+    details: 'Aprobación final por parte de Dirección.',
+    candidate_id: 'cand-2',
+    candidate_name: 'Camila Fernández',
+    job_title: 'Analista de Recursos Humanos Sr.',
+  },
+  {
+    id: 'act-4',
+    created_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+    user_name: 'Sofía Seal',
+    user_role: 'Recruiter RRHH',
+    action_type: 'candidate_created',
+    title: 'Cargó el CV de Martín Rodríguez con lectura de PDF',
+    details: 'Score ATS calculado automáticamente en 58%.',
+    candidate_id: 'cand-4',
+    candidate_name: 'Martín Rodríguez',
+    job_title: 'Desarrollador Fullstack React',
   },
 ];

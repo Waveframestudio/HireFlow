@@ -1,13 +1,16 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import {
+  ActivityLog,
   Application,
   Candidate,
   Interview,
   InterviewStatus,
   Job,
   PipelineStage,
+  STAGE_LABELS,
 } from '../types';
 import {
+  initialActivityLogs,
   initialApplications,
   initialCandidates,
   initialInterviews,
@@ -21,6 +24,7 @@ interface HireFlowContextValue {
   candidates: Candidate[];
   applications: Application[];
   interviews: Interview[];
+  activityLogs: ActivityLog[];
   loading: boolean;
   isSupabaseMode: boolean;
   addJob: (job: Omit<Job, 'id' | 'created_at'>) => Promise<void>;
@@ -41,6 +45,7 @@ interface HireFlowContextValue {
     id: string,
     updates: Partial<Pick<Interview, 'status' | 'feedback' | 'rating'>>
   ) => Promise<void>;
+  logActivity: (entry: Omit<ActivityLog, 'id' | 'created_at'>) => void;
 }
 
 const HireFlowContext = createContext<HireFlowContextValue | null>(null);
@@ -56,7 +61,17 @@ export const HireFlowProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [interviews, setInterviews] = useState<Interview[]>(
     isSupabaseConfigured ? [] : initialInterviews
   );
+  const [activityLogs, setActivityLogs] = useState<ActivityLog[]>(initialActivityLogs);
   const [loading, setLoading] = useState<boolean>(isSupabaseConfigured);
+
+  const logActivity = (entry: Omit<ActivityLog, 'id' | 'created_at'>) => {
+    const newLog: ActivityLog = {
+      ...entry,
+      id: `act-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      created_at: new Date().toISOString(),
+    };
+    setActivityLogs((prev) => [newLog, ...prev]);
+  };
 
   useEffect(() => {
     const client = supabase;
@@ -147,6 +162,17 @@ export const HireFlowProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       created_at: new Date().toISOString(),
     };
     setCandidates((prev) => [newCandidate, ...prev]);
+
+    logActivity({
+      user_name: 'Sofía Seal',
+      user_role: 'Recruiter RRHH',
+      action_type: 'candidate_created',
+      title: `Registró a ${candidateInput.full_name} en la base de talento`,
+      details: `Años de experiencia: ${candidateInput.years_experience} • Fuente: ${candidateInput.source}`,
+      candidate_id: newCandidate.id,
+      candidate_name: newCandidate.full_name,
+    });
+
     if (applyToJobId) {
       await applyCandidateToJobInternal(newCandidate, applyToJobId);
     }
@@ -223,27 +249,66 @@ export const HireFlowProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           : a
       )
     );
+
+    // Registro de actividad
+    const targetApp = applications.find((a) => a.id === applicationId);
+    const cand = targetApp ? candidates.find((c) => c.id === targetApp.candidate_id) : null;
+    const job = targetApp ? jobs.find((j) => j.id === targetApp.job_id) : null;
+
+    logActivity({
+      user_name: 'Sofía Seal',
+      user_role: 'Recruiter RRHH',
+      action_type: stage === 'rejected' ? 'candidate_rejected' : 'stage_changed',
+      title:
+        stage === 'rejected'
+          ? `Descartó a ${cand?.full_name || 'Candidato'}`
+          : `Movió a ${cand?.full_name || 'Candidato'} a etapa ${STAGE_LABELS[stage]}`,
+      details: rejectionReason
+        ? `Motivo: ${rejectionReason}`
+        : `Vacante: ${job?.title || 'General'}`,
+      candidate_id: cand?.id,
+      candidate_name: cand?.full_name,
+      job_title: job?.title,
+    });
   };
 
   const addInterview = async (interviewInput: Omit<Interview, 'id' | 'created_at'>) => {
+    let createdInt: Interview | null = null;
     if (isSupabaseConfigured && supabase) {
       const { data, error } = await supabase
         .from('interviews')
         .insert(interviewInput)
         .select()
         .single();
-      if (!error && data) setInterviews((prev) => [...prev, data as Interview]);
-      return;
-    }
-
-    setInterviews((prev) => [
-      ...prev,
-      {
+      if (!error && data) {
+        createdInt = data as Interview;
+        setInterviews((prev) => [...prev, createdInt!]);
+      }
+    } else {
+      createdInt = {
         ...interviewInput,
         id: `int-${Date.now()}`,
         created_at: new Date().toISOString(),
-      },
-    ]);
+      };
+      setInterviews((prev) => [...prev, createdInt!]);
+    }
+
+    const app = applications.find((a) => a.id === interviewInput.application_id);
+    const cand = app ? candidates.find((c) => c.id === app.candidate_id) : null;
+    const job = app ? jobs.find((j) => j.id === app.job_id) : null;
+
+    logActivity({
+      user_name: interviewInput.interviewer || 'Sofía Seal',
+      user_role: 'Entrevistador',
+      action_type: 'interview_scheduled',
+      title: `Agendó citación con ${cand?.full_name || 'Candidato'}`,
+      details: `${interviewInput.type.toUpperCase()} • ${new Date(
+        interviewInput.scheduled_at
+      ).toLocaleDateString('es-AR')}`,
+      candidate_id: cand?.id,
+      candidate_name: cand?.full_name,
+      job_title: job?.title,
+    });
   };
 
   const updateInterview = async (
@@ -254,6 +319,26 @@ export const HireFlowProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       await supabase.from('interviews').update(updates).eq('id', id);
     }
     setInterviews((prev) => prev.map((i) => (i.id === id ? { ...i, ...updates } : i)));
+
+    if (updates.status === 'completed') {
+      const int = interviews.find((i) => i.id === id);
+      const app = int ? applications.find((a) => a.id === int.application_id) : null;
+      const cand = app ? candidates.find((c) => c.id === app.candidate_id) : null;
+      const job = app ? jobs.find((j) => j.id === app.job_id) : null;
+
+      logActivity({
+        user_name: int?.interviewer || 'Lucas Gómez',
+        user_role: 'Hiring Manager',
+        action_type: 'interview_completed',
+        title: `Calificó la entrevista de ${cand?.full_name || 'Candidato'}${
+          updates.rating ? ` con ${updates.rating}★` : ''
+        }`,
+        details: updates.feedback || 'Sin notas adicionales',
+        candidate_id: cand?.id,
+        candidate_name: cand?.full_name,
+        job_title: job?.title,
+      });
+    }
   };
 
   return (
@@ -263,6 +348,7 @@ export const HireFlowProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         candidates,
         applications,
         interviews,
+        activityLogs,
         loading,
         isSupabaseMode: isSupabaseConfigured,
         addJob,
@@ -272,6 +358,7 @@ export const HireFlowProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         moveApplicationStage,
         addInterview,
         updateInterview,
+        logActivity,
       }}
     >
       {children}
