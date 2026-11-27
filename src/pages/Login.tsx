@@ -16,9 +16,16 @@ import { Logo } from '../components/Logo';
 import { ScrollReveal } from '../components/ScrollReveal';
 
 export const Login: React.FC = () => {
-  const { login, signUp, loginWithGoogle, resetPassword, loginAsDemo } = useAuth();
+  const { login, signUp, loginWithGoogle, resetPassword, loginAsDemo, isSupabaseActive, user, loading } = useAuth();
   const toast = useToast();
   const navigate = useNavigate();
+
+  // Si ya hay una sesión activa confirmada, redirigir al Dashboard
+  React.useEffect(() => {
+    if (user && !loading) {
+      navigate('/', { replace: true });
+    }
+  }, [user, loading, navigate]);
 
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
   const [fullName, setFullName] = useState('');
@@ -32,6 +39,19 @@ export const Login: React.FC = () => {
   const [isForgotPassword, setIsForgotPassword] = useState(false);
   const [resetEmail, setResetEmail] = useState('');
   const [isResetting, setIsResetting] = useState(false);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#FAF4EC] flex flex-col items-center justify-center p-4">
+        <div className="w-12 h-12 rounded-2xl bg-[#11314E] flex items-center justify-center text-white shadow-xl animate-pulse mb-3">
+          <span className="font-extrabold text-lg tracking-wider text-[#EC623E]">HF</span>
+        </div>
+        <p className="text-xs font-bold text-[#11314E] animate-pulse">
+          Validando cuenta de Google...
+        </p>
+      </div>
+    );
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -68,12 +88,13 @@ export const Login: React.FC = () => {
   const handleGoogleLogin = async () => {
     setIsLoading(true);
     const res = await loginWithGoogle();
-    setIsLoading(false);
-    if (res.success) {
+    if (!res.success) {
+      setIsLoading(false);
+      toast.error('Error al conectar con Google', res.error || 'No se pudo completar el acceso.');
+    } else if (!isSupabaseActive) {
+      setIsLoading(false);
       toast.success('¡Sesión iniciada con Google!', 'Bienvenido/a a HireFlow ATS.');
       navigate('/');
-    } else {
-      toast.error('Error al conectar con Google', res.error || 'No se pudo completar el acceso.');
     }
   };
 

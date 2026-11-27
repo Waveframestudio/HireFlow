@@ -65,57 +65,149 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const isSupabaseActive = isSupabaseConfigured;
+
+  // Detectar si la URL contiene parámetros de retorno OAuth de Google
+  const isOAuthCallback =
+    typeof window !== 'undefined' &&
+    (window.location.hash.includes('access_token=') ||
+      window.location.search.includes('code=') ||
+      window.location.search.includes('error=') ||
+      window.location.hash.includes('error='));
+
+  const [loading, setLoading] = useState<boolean>(() => {
+    return isSupabaseConfigured || isOAuthCallback;
+  });
+
   const [user, setUser] = useState<UserProfile | null>(() => {
+    // Si estamos procesando un callback de OAuth, no cargar un usuario previo de demo
+    if (isOAuthCallback) return null;
+
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) return JSON.parse(saved);
     } catch {
       // fallback
     }
-    // Por defecto iniciamos con el perfil de recruiter para mantener la experiencia fluida si ya navega
-    return DEMO_PROFILES.recruiter;
+    return null;
   });
 
-  const [loading, setLoading] = useState(false);
-  const isSupabaseActive = isSupabaseConfigured;
+  // Helper para convertir el usuario de Supabase a UserProfile
+  const mapSupabaseUser = (sbUser: any): UserProfile => {
+    const meta = sbUser.user_metadata || {};
+    const fullName =
+      meta.full_name ||
+      meta.name ||
+      (meta.given_name && meta.family_name ? `${meta.given_name} ${meta.family_name}` : '') ||
+      sbUser.email?.split('@')[0] ||
+      'Usuario';
+    const email = sbUser.email || '';
+    const avatarUrl = meta.avatar_url || meta.picture || undefined;
+
+    const parts = fullName.trim().split(/\s+/);
+    const initials =
+      parts.length > 1
+        ? `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase()
+        : fullName.slice(0, 2).toUpperCase() || 'U';
+
+    return {
+      id: sbUser.id,
+      email,
+      name: fullName,
+      role: meta.role || 'recruiter',
+      department: meta.department || 'Recursos Humanos & Selección',
+      avatarInitials: initials,
+      avatarUrl,
+    };
+  };
 
   // Escuchar sesión de Supabase si está activo
   useEffect(() => {
-    if (!isSupabaseConfigured || !supabase) return;
+    if (!isSupabaseConfigured || !supabase) {
+      setLoading(false);
+      return;
+    }
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) {
-        const u: UserProfile = {
-          id: session.user.id,
-          email: session.user.email || 'usuario@hireflow.app',
-          name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'Usuario',
-          role: session.user.user_metadata?.role || 'recruiter',
-          department: session.user.user_metadata?.department || 'Talento',
-          avatarInitials: (session.user.user_metadata?.full_name?.[0] || session.user.email?.[0] || 'U').toUpperCase(),
-        };
-        setUser(u);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(u));
+    const sb = supabase;
+    let isMounted = true;
+    let safetyTimeout: any = null;
+
+    const initAuth = async () => {
+      // 1. Extraer errores de query o hash
+      const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+      const searchParams = new URLSearchParams(window.location.search);
+
+      const oauthError = searchParams.get('error') || hashParams.get('error');
+      const oauthErrorDesc =
+        searchParams.get('error_description') ||
+        hashParams.get('error_description') ||
+        searchParams.get('error_code');
+
+      if (oauthError || oauthErrorDesc) {
+        console.error('[HireFlow Auth] Error devuelto por OAuth:', oauthError, oauthErrorDesc);
+        alert(`Error al iniciar sesión con Google / Supabase:\n\n${oauthErrorDesc || oauthError}\n\nRevisá los permisos o la consola de Supabase.`);
+        window.history.replaceState({}, document.title, window.location.pathname);
+        if (isMounted) setLoading(false);
+        return;
       }
-    });
 
+      // 2. Consultar getSession() (supabase-js procesa e intercambia el código automáticamente)
+      try {
+        const {
+          data: { session },
+        } = await sb.auth.getSession();
+        if (session?.user && isMounted) {
+          const u = mapSupabaseUser(session.user);
+          setUser(u);
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(u));
+          window.history.replaceState({}, document.title, window.location.pathname);
+          if (isMounted) setLoading(false);
+          return;
+        }
+      } catch (err) {
+        console.error('[HireFlow Auth] Error en getSession():', err);
+      }
+
+      // 4. Si estamos en un callback de OAuth, darle 5 segundos a onAuthStateChange para procesar los tokens
+      if (isOAuthCallback) {
+        safetyTimeout = setTimeout(() => {
+          if (isMounted) {
+            console.warn('[HireFlow Auth] Timeout de espera OAuth agotado sin sesión.');
+            setLoading(false);
+          }
+        }, 5000);
+      } else {
+        if (isMounted) setLoading(false);
+      }
+    };
+
+    initAuth();
+
+    // 5. Suscribirse a eventos de autenticación en tiempo real
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = sb.auth.onAuthStateChange((event, session) => {
+      console.log('[HireFlow Auth] onAuthStateChange event:', event, 'user:', session?.user?.email);
+      if (!isMounted) return;
+      if (safetyTimeout) clearTimeout(safetyTimeout);
+
       if (session?.user) {
-        const u: UserProfile = {
-          id: session.user.id,
-          email: session.user.email || 'usuario@hireflow.app',
-          name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'Usuario',
-          role: session.user.user_metadata?.role || 'recruiter',
-          department: session.user.user_metadata?.department || 'Talento',
-          avatarInitials: (session.user.user_metadata?.full_name?.[0] || session.user.email?.[0] || 'U').toUpperCase(),
-        };
+        const u = mapSupabaseUser(session.user);
         setUser(u);
         localStorage.setItem(STORAGE_KEY, JSON.stringify(u));
+        setLoading(false);
+      } else if (event === 'SIGNED_OUT') {
+        setUser(null);
+        localStorage.removeItem(STORAGE_KEY);
+        setLoading(false);
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      isMounted = false;
+      if (safetyTimeout) clearTimeout(safetyTimeout);
+      subscription.unsubscribe();
+    };
   }, []);
 
   const login = async (email: string, password?: string): Promise<{ success: boolean; error?: string }> => {
@@ -237,10 +329,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     if (isSupabaseConfigured && supabase) {
       try {
+        // Limpiamos cualquier usuario demo antiguo antes de iniciar OAuth
+        localStorage.removeItem(STORAGE_KEY);
         const { error } = await supabase.auth.signInWithOAuth({
           provider: 'google',
           options: {
             redirectTo: window.location.origin,
+            scopes: 'openid email profile',
+            queryParams: {
+              prompt: 'select_account',
+            },
           },
         });
         if (error) {
