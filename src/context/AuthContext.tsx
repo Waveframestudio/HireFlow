@@ -10,6 +10,7 @@ export interface UserProfile {
   role: UserRole;
   department: string;
   avatarInitials: string;
+  avatarUrl?: string;
 }
 
 export const ROLE_LABELS: Record<UserRole, string> = {
@@ -55,6 +56,8 @@ interface AuthContextValue {
   signUp: (email: string, password: string, name?: string, role?: UserRole) => Promise<{ success: boolean; error?: string }>;
   loginWithGoogle: () => Promise<{ success: boolean; error?: string }>;
   resetPassword: (email: string) => Promise<{ success: boolean; error?: string }>;
+  updateProfile: (updates: Partial<Pick<UserProfile, 'name' | 'department' | 'avatarInitials' | 'avatarUrl'>>) => Promise<{ success: boolean; error?: string }>;
+  updatePassword: (newPassword: string) => Promise<{ success: boolean; error?: string }>;
   loginAsDemo: (profileKey: 'recruiter' | 'hiring_manager' | 'admin') => void;
   logout: () => void;
 }
@@ -290,6 +293,63 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return { success: true };
   };
 
+  const updateProfile = async (
+    updates: Partial<Pick<UserProfile, 'name' | 'department' | 'avatarInitials' | 'avatarUrl'>>
+  ): Promise<{ success: boolean; error?: string }> => {
+    if (!user) return { success: false, error: 'No hay sesión activa.' };
+
+    const updatedUser: UserProfile = {
+      ...user,
+      ...updates,
+      avatarInitials:
+        updates.avatarInitials ||
+        (updates.name
+          ? updates.name
+              .split(' ')
+              .map((n) => n[0])
+              .slice(0, 2)
+              .join('')
+              .toUpperCase()
+          : user.avatarInitials),
+    };
+
+    setUser(updatedUser);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedUser));
+
+    if (isSupabaseConfigured && supabase) {
+      try {
+        await supabase.auth.updateUser({
+          data: {
+            full_name: updatedUser.name,
+            department: updatedUser.department,
+            avatar_url: updatedUser.avatarUrl,
+          },
+        });
+      } catch (err: any) {
+        // En caso de error remoto pero éxito local
+      }
+    }
+
+    return { success: true };
+  };
+
+  const updatePassword = async (newPassword: string): Promise<{ success: boolean; error?: string }> => {
+    if (!newPassword || newPassword.length < 6) {
+      return { success: false, error: 'La contraseña debe tener al menos 6 caracteres.' };
+    }
+
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const { error } = await supabase.auth.updateUser({ password: newPassword });
+        if (error) return { success: false, error: error.message };
+      } catch (err: any) {
+        return { success: false, error: err.message };
+      }
+    }
+
+    return { success: true };
+  };
+
   const loginAsDemo = (profileKey: 'recruiter' | 'hiring_manager' | 'admin') => {
     const profile = DEMO_PROFILES[profileKey];
     setUser(profile);
@@ -314,6 +374,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         signUp,
         loginWithGoogle,
         resetPassword,
+        updateProfile,
+        updatePassword,
         loginAsDemo,
         logout,
       }}

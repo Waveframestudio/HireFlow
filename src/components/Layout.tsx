@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { Logo } from './Logo';
 import { CommandPalette } from './CommandPalette';
+import { ProfileModal } from './ProfileModal';
 import { ROLE_LABELS, useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 
@@ -26,6 +27,7 @@ const navItems = [
 
 export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
   const { user, logout } = useAuth();
   const toast = useToast();
   const navigate = useNavigate();
@@ -102,25 +104,38 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 
         {/* Bloque de Perfil Activo en el Pie del Sidebar */}
         {user && (
-          <div className="p-3.5 border-t border-[#1C456B] bg-[#0E283F] shrink-0">
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2.5 min-w-0">
+          <div className="p-2.5 border-t border-[#1C456B] bg-[#0E283F] shrink-0">
+            <div className="flex items-center justify-between gap-2">
+              <button
+                type="button"
+                onClick={() => setIsProfileOpen(true)}
+                title="Hacé clic para ver y editar tu perfil o cambiar contraseña"
+                className="flex items-center gap-2.5 min-w-0 flex-1 hover:bg-[#163B5D] p-1.5 rounded-lg transition-colors cursor-pointer text-left group"
+              >
                 <div className="relative shrink-0">
-                  <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#EC623E] to-[#D95330] text-white flex items-center justify-center text-xs font-extrabold shadow-sm">
-                    {user.avatarInitials}
+                  <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#EC623E] to-[#D95330] text-white flex items-center justify-center text-xs font-extrabold shadow-sm group-hover:scale-105 transition-transform overflow-hidden">
+                    {user.avatarUrl ? (
+                      <img
+                        src={user.avatarUrl}
+                        alt={user.name}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      user.avatarInitials
+                    )}
                   </div>
                   <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-[#0E283F]" />
                 </div>
 
                 <div className="min-w-0">
-                  <p className="text-xs font-bold text-white truncate leading-snug">
+                  <p className="text-xs font-bold text-white truncate leading-snug group-hover:text-[#EC623E] transition-colors">
                     {user.name}
                   </p>
                   <p className="text-[11px] text-[#A6C3DA] truncate">
                     {ROLE_LABELS[user.role] || user.role}
                   </p>
                 </div>
-              </div>
+              </button>
 
               <button
                 type="button"
@@ -156,6 +171,9 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 
       {/* Buscador Global CommandPalette */}
       <CommandPalette isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
+
+      {/* Modal de Perfil & Ajustes de Cuenta */}
+      <ProfileModal isOpen={isProfileOpen} onClose={() => setIsProfileOpen(false)} />
     </div>
   );
 };
