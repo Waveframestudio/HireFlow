@@ -19,6 +19,7 @@ import { EmailModal } from '../components/EmailModal';
 import { EmailTemplateContext, EmailTemplateKey } from '../lib/emailTemplates';
 import { downloadIcsFile, generateGoogleCalendarUrl } from '../lib/calendar';
 import { ROLE_LABELS, useAuth } from '../context/AuthContext';
+import { useModalAnimation } from '../hooks/useModalAnimation';
 
 const TYPE_LABELS: Record<InterviewType, string> = {
   screening: 'Screening Telefónico',
@@ -33,6 +34,11 @@ export const Interviews: React.FC = () => {
   const { user } = useAuth();
   const toast = useToast();
   const [showModal, setShowModal] = useState(false);
+  const {
+    shouldRender: shouldRenderScheduleModal,
+    backdropClass: scheduleBackdrop,
+    contentClass: scheduleContent,
+  } = useModalAnimation(showModal);
 
   const [applicationId, setApplicationId] = useState('');
   const [type, setType] = useState<InterviewType>('screening');
@@ -335,9 +341,14 @@ export const Interviews: React.FC = () => {
       />
 
       {/* Modal Agendar Entrevista */}
-      {showModal && (
-        <div className="fixed inset-0 bg-[#11314E]/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl border border-[#EFE3D3] max-w-md w-full p-6 shadow-2xl">
+      {shouldRenderScheduleModal && (
+        <div
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowModal(false);
+          }}
+          className={`fixed inset-0 bg-[#11314E]/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 ${scheduleBackdrop}`}
+        >
+          <div className={`bg-white rounded-xl border border-[#EFE3D3] max-w-md w-full p-6 shadow-2xl ${scheduleContent}`}>
             <div className="flex items-center justify-between mb-4 border-b border-[#EFE3D3]/70 pb-3">
               <h3 className="font-bold text-lg text-[#11314E]">Agendar Citación / Entrevista</h3>
               <button

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { AlertTriangle, X } from 'lucide-react';
+import { useModalAnimation } from '../hooks/useModalAnimation';
 
 interface RejectCandidateModalProps {
   isOpen: boolean;
@@ -28,8 +29,9 @@ export const RejectCandidateModal: React.FC<RejectCandidateModalProps> = ({
   const [selectedReason, setSelectedReason] = useState<string>(COMMON_REASONS[0]);
   const [customComment, setCustomComment] = useState<string>('');
   const [loading, setLoading] = useState(false);
+  const { shouldRender, backdropClass, contentClass } = useModalAnimation(isOpen);
 
-  if (!isOpen) return null;
+  if (!shouldRender) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,8 +48,13 @@ export const RejectCandidateModal: React.FC<RejectCandidateModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-[#11314E]/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-xl border border-[#EFE3D3] max-w-md w-full p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+    <div
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+      className={`fixed inset-0 bg-[#11314E]/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 ${backdropClass}`}
+    >
+      <div className={`bg-white rounded-xl border border-[#EFE3D3] max-w-md w-full p-6 shadow-2xl ${contentClass}`}>
         <div className="flex items-start justify-between mb-3 border-b border-[#EFE3D3]/70 pb-3">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg bg-rose-50 flex items-center justify-center">

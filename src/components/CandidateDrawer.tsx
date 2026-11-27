@@ -27,6 +27,7 @@ import { formatFullDateTime, formatRelativeTime } from '../lib/formatTime';
 import { usePermissions } from '../lib/permissions';
 import { EmailModal } from './EmailModal';
 import { EmailTemplateContext, EmailTemplateKey } from '../lib/emailTemplates';
+import { useModalAnimation } from '../hooks/useModalAnimation';
 
 interface CandidateDrawerProps {
   isOpen: boolean;
@@ -62,8 +63,9 @@ export const CandidateDrawer: React.FC<CandidateDrawerProps> = ({
   const permissions = usePermissions();
   const { activityLogs } = useHireFlow();
   const [activeTab, setActiveTab] = useState<'overview' | 'cv' | 'interviews' | 'history'>('overview');
+  const { shouldRender, backdropClass, drawerClass } = useModalAnimation(isOpen, 220);
 
-  if (!isOpen || !application || !candidate || !job) return null;
+  if (!shouldRender || !application || !candidate || !job) return null;
 
   const appInterviews = interviews.filter((i) => i.application_id === application.id);
   const candidateLogs = activityLogs.filter((a) => a.candidate_id === candidate.id);
@@ -127,11 +129,11 @@ export const CandidateDrawer: React.FC<CandidateDrawerProps> = ({
       {/* Backdrop */}
       <div
         onClick={onClose}
-        className="fixed inset-0 bg-[#11314E]/50 backdrop-blur-xs transition-opacity duration-300"
+        className={`fixed inset-0 bg-[#11314E]/50 backdrop-blur-xs ${backdropClass}`}
       />
 
       {/* Drawer Panel */}
-      <div className="fixed inset-y-0 right-0 max-w-2xl w-full bg-white shadow-2xl flex flex-col z-50 border-l border-[#EFE3D3] animate-in slide-in-from-right duration-300">
+      <div className={`fixed inset-y-0 right-0 max-w-2xl w-full bg-white shadow-2xl flex flex-col z-50 border-l border-[#EFE3D3] ${drawerClass}`}>
         {/* Header */}
         <div className="p-6 bg-[#FAF4EC]/70 border-b border-[#EFE3D3] flex items-start justify-between gap-4">
           <div className="flex items-start gap-3.5">

@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { useHireFlow } from '../context/HireFlowContext';
 import { STAGE_COLORS, STAGE_LABELS } from '../types';
+import { useModalAnimation } from '../hooks/useModalAnimation';
 
 interface CommandPaletteProps {
   isOpen: boolean;
@@ -37,6 +38,7 @@ interface PaletteItem {
 export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose }) => {
   const navigate = useNavigate();
   const { candidates, jobs, interviews, applications } = useHireFlow();
+  const { shouldRender, backdropClass, contentClass } = useModalAnimation(isOpen, 180);
   const [query, setQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -227,13 +229,18 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose 
     }
   }, [selectedIndex]);
 
-  if (!isOpen) return null;
+  if (!shouldRender) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center pt-20 p-4 bg-[#11314E]/60 backdrop-blur-xs animate-in fade-in duration-150">
+    <div
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+      className={`fixed inset-0 z-50 flex items-start justify-center pt-20 p-4 bg-[#11314E]/60 backdrop-blur-xs ${backdropClass}`}
+    >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="bg-white rounded-2xl max-w-xl w-full border border-[#EFE3D3] shadow-2xl overflow-hidden flex flex-col max-h-[75vh] animate-in zoom-in-95 duration-150"
+        className={`bg-white rounded-2xl max-w-xl w-full border border-[#EFE3D3] shadow-2xl overflow-hidden flex flex-col max-h-[75vh] ${contentClass}`}
       >
         {/* Search Header */}
         <div className="p-4 bg-[#FAF4EC]/70 border-b border-[#EFE3D3] flex items-center gap-3">

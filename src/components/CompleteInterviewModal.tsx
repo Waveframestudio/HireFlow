@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Star, X } from 'lucide-react';
+import { useModalAnimation } from '../hooks/useModalAnimation';
 
 interface CompleteInterviewModalProps {
   isOpen: boolean;
@@ -30,8 +31,9 @@ export const CompleteInterviewModal: React.FC<CompleteInterviewModalProps> = ({
   const [hoverRating, setHoverRating] = useState<number | null>(null);
   const [feedback, setFeedback] = useState<string>('');
   const [loading, setLoading] = useState(false);
+  const { shouldRender, backdropClass, contentClass } = useModalAnimation(isOpen);
 
-  if (!isOpen) return null;
+  if (!shouldRender) return null;
 
   const currentDisplayRating = hoverRating !== null ? hoverRating : rating;
 
@@ -47,8 +49,13 @@ export const CompleteInterviewModal: React.FC<CompleteInterviewModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-[#11314E]/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-xl border border-[#EFE3D3] max-w-md w-full p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+    <div
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+      className={`fixed inset-0 bg-[#11314E]/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 ${backdropClass}`}
+    >
+      <div className={`bg-white rounded-xl border border-[#EFE3D3] max-w-md w-full p-6 shadow-2xl ${contentClass}`}>
         <div className="flex items-start justify-between mb-4 border-b border-[#EFE3D3]/70 pb-3">
           <div>
             <span className="text-[11px] font-semibold text-[#11314E] bg-[#FAF4EC] border border-[#EFE3D3] px-2 py-0.5 rounded">

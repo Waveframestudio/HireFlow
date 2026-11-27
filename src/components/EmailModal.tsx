@@ -7,6 +7,7 @@ import {
   buildMailtoUrl,
 } from '../lib/emailTemplates';
 import { useToast } from '../context/ToastContext';
+import { useModalAnimation } from '../hooks/useModalAnimation';
 
 interface EmailModalProps {
   isOpen: boolean;
@@ -22,6 +23,7 @@ export const EmailModal: React.FC<EmailModalProps> = ({
   context,
 }) => {
   const toast = useToast();
+  const { shouldRender, backdropClass, contentClass } = useModalAnimation(isOpen);
   const [selectedKey, setSelectedKey] = useState<EmailTemplateKey>(initialTemplate);
   const [subject, setSubject] = useState('');
   const [body, setBody] = useState('');
@@ -67,11 +69,16 @@ export const EmailModal: React.FC<EmailModalProps> = ({
     toast.info('Abriendo cliente de correo...', `Destinatario: ${context.candidateEmail}`);
   };
 
-  if (!isOpen) return null;
+  if (!shouldRender) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#11314E]/60 backdrop-blur-xs animate-in fade-in duration-200">
-      <div className="bg-white rounded-2xl max-w-2xl w-full border border-[#EFE3D3] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+    <div
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+      className={`fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#11314E]/60 backdrop-blur-xs ${backdropClass}`}
+    >
+      <div className={`bg-white rounded-2xl max-w-2xl w-full border border-[#EFE3D3] shadow-2xl overflow-hidden flex flex-col max-h-[90vh] ${contentClass}`}>
         {/* Header */}
         <div className="px-6 py-4 bg-[#FAF4EC] border-b border-[#EFE3D3] flex items-center justify-between">
           <div className="flex items-center gap-3">

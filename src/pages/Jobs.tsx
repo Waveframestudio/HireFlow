@@ -24,6 +24,7 @@ import { usePermissions } from '../lib/permissions';
 import { AnimatedNumber } from '../components/AnimatedNumber';
 import { ScrollReveal } from '../components/ScrollReveal';
 import { CandidateDrawer } from '../components/CandidateDrawer';
+import { useModalAnimation } from '../hooks/useModalAnimation';
 
 export const Jobs: React.FC = () => {
   const {
@@ -41,7 +42,26 @@ export const Jobs: React.FC = () => {
   // Estados de modales
   const [showModal, setShowModal] = useState(false);
   const [selectedJobForApplicants, setSelectedJobForApplicants] = useState<Job | null>(null);
+  const [activeApplicantsJob, setActiveApplicantsJob] = useState<Job | null>(null);
   const [selectedDrawerApp, setSelectedDrawerApp] = useState<Application | null>(null);
+
+  React.useEffect(() => {
+    if (selectedJobForApplicants) {
+      setActiveApplicantsJob(selectedJobForApplicants);
+    }
+  }, [selectedJobForApplicants]);
+
+  const {
+    shouldRender: shouldRenderApplicantsModal,
+    backdropClass: applicantsBackdrop,
+    contentClass: applicantsContent,
+  } = useModalAnimation(Boolean(selectedJobForApplicants));
+
+  const {
+    shouldRender: shouldRenderJobModal,
+    backdropClass: jobModalBackdrop,
+    contentClass: jobModalContent,
+  } = useModalAnimation(showModal);
 
   // Estados de filtros y búsqueda
   const [search, setSearch] = useState('');
@@ -139,12 +159,13 @@ export const Jobs: React.FC = () => {
   const closedJobsCount = jobs.filter((j) => j.status === 'closed').length;
 
   // Postulantes de la vacante seleccionada en el modal
+  const targetJob = selectedJobForApplicants || activeApplicantsJob;
   const selectedJobApps = useMemo(() => {
-    if (!selectedJobForApplicants) return [];
+    if (!targetJob) return [];
     return applications
-      .filter((a) => a.job_id === selectedJobForApplicants.id)
+      .filter((a) => a.job_id === targetJob.id)
       .sort((a, b) => b.ats_score - a.ats_score);
-  }, [applications, selectedJobForApplicants]);
+  }, [applications, targetJob]);
 
   const selectedJobAvgAts = useMemo(() => {
     if (selectedJobApps.length === 0) return 0;
@@ -503,25 +524,30 @@ export const Jobs: React.FC = () => {
       )}
 
       {/* Modal: Detalle de Postulantes de una Vacante */}
-      {selectedJobForApplicants && (
-        <div className="fixed inset-0 bg-[#11314E]/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl border border-[#EFE3D3] max-w-3xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+      {shouldRenderApplicantsModal && targetJob && (
+        <div
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setSelectedJobForApplicants(null);
+          }}
+          className={`fixed inset-0 bg-[#11314E]/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 ${applicantsBackdrop}`}
+        >
+          <div className={`bg-white rounded-2xl border border-[#EFE3D3] max-w-3xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden ${applicantsContent}`}>
             {/* Header del Modal */}
             <div className="p-6 bg-[#FAF4EC] border-b border-[#EFE3D3] flex items-start justify-between gap-4">
               <div>
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-xs font-semibold text-[#11314E] bg-white border border-[#EFE3D3] px-2.5 py-0.5 rounded-md">
-                    {selectedJobForApplicants.department}
+                    {targetJob.department}
                   </span>
                   <span className="text-xs text-slate-500 font-medium">
-                    {selectedJobForApplicants.location} · {selectedJobForApplicants.modality}
+                    {targetJob.location} · {targetJob.modality}
                   </span>
                 </div>
                 <h3 className="font-bold text-xl text-[#11314E] mt-1.5">
-                  {selectedJobForApplicants.title}
+                  {targetJob.title}
                 </h3>
                 <p className="text-xs text-slate-600 mt-1 max-w-xl">
-                  {selectedJobForApplicants.description}
+                  {targetJob.description}
                 </p>
 
                 {/* Métricas rápidas de la vacante */}
@@ -655,9 +681,14 @@ export const Jobs: React.FC = () => {
       )}
 
       {/* Modal Nueva Vacante */}
-      {showModal && (
-        <div className="fixed inset-0 bg-[#11314E]/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl border border-[#EFE3D3] max-w-lg w-full p-6 shadow-2xl">
+      {shouldRenderJobModal && (
+        <div
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowModal(false);
+          }}
+          className={`fixed inset-0 bg-[#11314E]/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 ${jobModalBackdrop}`}
+        >
+          <div className={`bg-white rounded-xl border border-[#EFE3D3] max-w-lg w-full p-6 shadow-2xl ${jobModalContent}`}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-bold text-lg text-[#11314E]">Crear Nueva Vacante</h3>
               <button

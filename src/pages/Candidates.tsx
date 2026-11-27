@@ -28,6 +28,7 @@ import { usePermissions } from '../lib/permissions';
 import { EmailModal } from '../components/EmailModal';
 import { EmailTemplateContext, EmailTemplateKey } from '../lib/emailTemplates';
 import { exportCandidatesToCsv } from '../lib/exportCsv';
+import { useModalAnimation } from '../hooks/useModalAnimation';
 
 export const Candidates: React.FC = () => {
   const { candidates, jobs, applications, addCandidate, applyCandidateToJob } = useHireFlow();
@@ -35,6 +36,11 @@ export const Candidates: React.FC = () => {
   const permissions = usePermissions();
   const [search, setSearch] = useState('');
   const [showModal, setShowModal] = useState(false);
+  const {
+    shouldRender: shouldRenderCvModal,
+    backdropClass: cvModalBackdrop,
+    contentClass: cvModalContent,
+  } = useModalAnimation(showModal);
 
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
@@ -408,9 +414,14 @@ export const Candidates: React.FC = () => {
       </ScrollReveal>
 
       {/* Modal Carga de CV con Lector Automático de PDF */}
-      {showModal && (
-        <div className="fixed inset-0 bg-[#11314E]/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl border border-[#EFE3D3] max-w-xl w-full p-6 shadow-2xl max-h-[92vh] overflow-y-auto">
+      {shouldRenderCvModal && (
+        <div
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowModal(false);
+          }}
+          className={`fixed inset-0 bg-[#11314E]/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 ${cvModalBackdrop}`}
+        >
+          <div className={`bg-white rounded-xl border border-[#EFE3D3] max-w-xl w-full p-6 shadow-2xl max-h-[92vh] overflow-y-auto ${cvModalContent}`}>
             <div className="flex items-center justify-between mb-3 border-b border-[#EFE3D3]/70 pb-3">
               <div>
                 <h3 className="font-bold text-lg text-[#11314E]">Cargar CV y Analizar ATS</h3>

@@ -18,6 +18,7 @@ import {
 import { ROLE_LABELS, useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { usePermissions } from '../lib/permissions';
+import { useModalAnimation } from '../hooks/useModalAnimation';
 
 interface ProfileModalProps {
   isOpen: boolean;
@@ -29,6 +30,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) =
   const toast = useToast();
   const permissions = usePermissions();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { shouldRender, backdropClass, contentClass } = useModalAnimation(isOpen);
 
   const [activeTab, setActiveTab] = useState<'profile' | 'security' | 'session'>('profile');
 
@@ -43,7 +45,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) =
   const [showPassword, setShowPassword] = useState(false);
   const [isSavingPassword, setIsSavingPassword] = useState(false);
 
-  if (!isOpen || !user) return null;
+  if (!shouldRender || !user) return null;
 
   const handlePhotoClick = () => {
     fileInputRef.current?.click();
@@ -133,8 +135,13 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) =
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#11314E]/60 backdrop-blur-xs animate-in fade-in duration-200">
-      <div className="bg-white rounded-2xl border border-[#EFE3D3] max-w-xl w-full shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+    <div
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+      className={`fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#11314E]/60 backdrop-blur-xs ${backdropClass}`}
+    >
+      <div className={`bg-white rounded-2xl border border-[#EFE3D3] max-w-xl w-full shadow-2xl overflow-hidden flex flex-col max-h-[90vh] ${contentClass}`}>
         {/* Header con Avatar Clickeable */}
         <div className="p-6 bg-[#FAF4EC] border-b border-[#EFE3D3] flex items-start justify-between gap-4 shrink-0">
           <div className="flex items-center gap-3.5">
