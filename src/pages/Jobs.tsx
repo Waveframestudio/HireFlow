@@ -1,9 +1,11 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import {
   ArrowRight,
   Briefcase,
+  Check,
   CheckCircle2,
+  ChevronDown,
   ChevronRight,
   ExternalLink,
   Filter,
@@ -25,6 +27,12 @@ import { AnimatedNumber } from '../components/AnimatedNumber';
 import { ScrollReveal } from '../components/ScrollReveal';
 import { CandidateDrawer } from '../components/CandidateDrawer';
 import { useModalAnimation } from '../hooks/useModalAnimation';
+
+const MODALITY_OPTIONS = [
+  { value: 'Híbrido', label: 'Híbrido', desc: 'Presencial y remoto flexible' },
+  { value: 'Remoto', label: 'Remoto', desc: '100% trabajo a distancia' },
+  { value: 'Presencial', label: 'Presencial', desc: 'En sede u oficina física' },
+];
 
 export const Jobs: React.FC = () => {
   const {
@@ -69,16 +77,60 @@ export const Jobs: React.FC = () => {
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [selectedModality, setSelectedModality] = useState('all');
 
-  // Estados para formulario de nueva vacante
+  // Estados para formulario de nueva vacante (inicializados totalmente vacíos)
   const [title, setTitle] = useState('');
-  const [department, setDepartment] = useState('Sistemas');
-  const [location, setLocation] = useState('Híbrido');
-  const [modality, setModality] = useState('Full-time');
-  const [minExp, setMinExp] = useState(2);
+  const [department, setDepartment] = useState('');
+  const [location, setLocation] = useState('');
+  const [modality, setModality] = useState('');
+  const [minExp, setMinExp] = useState<number | ''>('');
   const [salaryRange, setSalaryRange] = useState('');
   const [requiredSkills, setRequiredSkills] = useState('');
   const [niceSkills, setNiceSkills] = useState('');
   const [description, setDescription] = useState('');
+
+  // Dropdown personalizado y estilizado para modalidad
+  const [isModalityOpen, setIsModalityOpen] = useState(false);
+  const modalityDropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        modalityDropdownRef.current &&
+        !modalityDropdownRef.current.contains(event.target as Node)
+      ) {
+        setIsModalityOpen(false);
+      }
+    };
+    if (isModalityOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isModalityOpen]);
+
+  const resetJobForm = () => {
+    setTitle('');
+    setDepartment('');
+    setLocation('');
+    setModality('');
+    setMinExp('');
+    setSalaryRange('');
+    setRequiredSkills('');
+    setNiceSkills('');
+    setDescription('');
+    setIsModalityOpen(false);
+  };
+
+  const handleOpenNewJobModal = () => {
+    resetJobForm();
+    setShowModal(true);
+  };
+
+  const handleCloseJobModal = () => {
+    setShowModal(false);
+    resetJobForm();
+  };
 
   // Listas únicas para desplegables de filtro
   const departments = useMemo(() => {
@@ -86,7 +138,10 @@ export const Jobs: React.FC = () => {
   }, [jobs]);
 
   const modalities = useMemo(() => {
-    return ['all', ...Array.from(new Set(jobs.map((j) => j.location))).filter(Boolean)];
+    const list = Array.from(
+      new Set(jobs.map((j) => j.modality || 'Híbrido'))
+    ).filter(Boolean);
+    return ['all', ...list];
   }, [jobs]);
 
   // Vacantes filtradas
@@ -101,7 +156,10 @@ export const Jobs: React.FC = () => {
 
       const matchesDept = selectedDept === 'all' || job.department === selectedDept;
       const matchesStatus = selectedStatus === 'all' || job.status === selectedStatus;
-      const matchesModality = selectedModality === 'all' || job.location === selectedModality;
+      const matchesModality =
+        selectedModality === 'all' ||
+        job.modality === selectedModality ||
+        job.location?.toLowerCase().includes(selectedModality.toLowerCase());
 
       return matchesSearch && matchesDept && matchesStatus && matchesModality;
     });
@@ -122,13 +180,26 @@ export const Jobs: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim()) return;
+    if (
+      !title.trim() ||
+      !department.trim() ||
+      !location.trim() ||
+      !modality.trim() ||
+      !requiredSkills.trim() ||
+      !description.trim()
+    ) {
+      toast.error(
+        'Campos obligatorios incompletos',
+        'Por favor, completá los campos marcados con asterisco rojo (*).'
+      );
+      return;
+    }
 
     await addJob({
       title: title.trim(),
       department: department.trim(),
       location: location.trim(),
-      modality: modality.trim(),
+      modality: modality.trim() || 'Híbrido',
       status: 'open',
       description: description.trim(),
       required_skills: requiredSkills
@@ -139,17 +210,13 @@ export const Jobs: React.FC = () => {
         .split(',')
         .map((s) => s.trim())
         .filter(Boolean),
-      min_experience_years: Number(minExp) || 0,
+      min_experience_years: minExp === '' ? 0 : Number(minExp),
       salary_range: salaryRange.trim() || undefined,
     });
 
     toast.success('Vacante creada con éxito', `Se publicó la búsqueda: ${title.trim()}`);
 
-    setTitle('');
-    setRequiredSkills('');
-    setNiceSkills('');
-    setDescription('');
-    setSalaryRange('');
+    resetJobForm();
     setShowModal(false);
   };
 
@@ -196,7 +263,7 @@ export const Jobs: React.FC = () => {
           </div>
           {permissions.canCreateJob ? (
             <button
-              onClick={() => setShowModal(true)}
+              onClick={handleOpenNewJobModal}
               className="inline-flex items-center gap-2 bg-[#EC623E] hover:bg-[#D95330] text-white text-sm font-semibold px-4 py-2.5 rounded-lg transition-colors cursor-pointer shadow-sm hover:shadow-md"
             >
               <Plus className="w-4 h-4" />
@@ -447,11 +514,16 @@ export const Jobs: React.FC = () => {
                     {job.title}
                   </h3>
 
-                  {/* Metadatos: Ubicación, Exp, Salario */}
-                  <div className="flex items-center gap-3 text-xs text-slate-500 mt-2 flex-wrap">
-                    <span className="inline-flex items-center gap-1">
+                  {/* Metadatos: Ubicación, Modalidad, Exp, Salario */}
+                  <div className="flex items-center gap-2.5 text-xs text-slate-500 mt-2 flex-wrap">
+                    <span className="inline-flex items-center gap-1 font-medium text-slate-600">
                       <MapPin className="w-3.5 h-3.5 text-[#1A446C]" /> {job.location}
                     </span>
+                    {job.modality && (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-[#FAF4EC] text-[#11314E] border border-[#EFE3D3]">
+                        {job.modality}
+                      </span>
+                    )}
                     <span className="inline-flex items-center gap-1">
                       <Briefcase className="w-3.5 h-3.5 text-[#1A446C]" /> {job.min_experience_years}+ años exp.
                     </span>
@@ -684,7 +756,7 @@ export const Jobs: React.FC = () => {
       {shouldRenderJobModal && (
         <div
           onClick={(e) => {
-            if (e.target === e.currentTarget) setShowModal(false);
+            if (e.target === e.currentTarget) handleCloseJobModal();
           }}
           className={`fixed inset-0 bg-[#11314E]/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 ${jobModalBackdrop}`}
         >
@@ -692,8 +764,9 @@ export const Jobs: React.FC = () => {
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-bold text-lg text-[#11314E]">Crear Nueva Vacante</h3>
               <button
-                onClick={() => setShowModal(false)}
-                className="text-slate-400 hover:text-[#11314E] cursor-pointer"
+                type="button"
+                onClick={handleCloseJobModal}
+                className="text-slate-400 hover:text-[#11314E] cursor-pointer transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -702,47 +775,110 @@ export const Jobs: React.FC = () => {
             <form onSubmit={handleSubmit} className="space-y-3.5">
               <div>
                 <label className="block text-xs font-semibold text-[#11314E] mb-1">
-                  Título del puesto *
+                  Título del puesto <span className="text-red-500 font-bold">*</span>
                 </label>
                 <input
                   required
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  placeholder="Ej. Analista Funcional Jr."
-                  className="w-full border border-[#EFE3D3] bg-[#FAF4EC]/40 focus:bg-white focus:border-[#EC623E] focus:ring-1 focus:ring-[#EC623E] rounded-lg px-3 py-2 text-sm outline-none text-[#11314E]"
+                  placeholder="Ingresá el título del puesto (ej. Analista Funcional Jr., Desarrollador Frontend)"
+                  className="w-full border border-[#EFE3D3] bg-[#FAF4EC]/40 focus:bg-white focus:border-[#EC623E] focus:ring-1 focus:ring-[#EC623E] rounded-lg px-3 py-2 text-sm outline-none text-[#11314E] placeholder:text-slate-400"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-[#11314E] mb-1">Área</label>
+                  <label className="block text-xs font-semibold text-[#11314E] mb-1">
+                    Área / Departamento <span className="text-red-500 font-bold">*</span>
+                  </label>
                   <input
+                    required
                     value={department}
                     onChange={(e) => setDepartment(e.target.value)}
-                    className="w-full border border-[#EFE3D3] bg-[#FAF4EC]/40 focus:bg-white focus:border-[#EC623E] focus:ring-1 focus:ring-[#EC623E] rounded-lg px-3 py-2 text-sm outline-none text-[#11314E]"
+                    placeholder="Ingresá el área o departamento (ej. Sistemas, Comercial, RRHH)"
+                    className="w-full border border-[#EFE3D3] bg-[#FAF4EC]/40 focus:bg-white focus:border-[#EC623E] focus:ring-1 focus:ring-[#EC623E] rounded-lg px-3 py-2 text-sm outline-none text-[#11314E] placeholder:text-slate-400"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-[#11314E] mb-1">Ubicación</label>
+                  <label className="block text-xs font-semibold text-[#11314E] mb-1">
+                    Ubicación (País / Localidad) <span className="text-red-500 font-bold">*</span>
+                  </label>
                   <input
+                    required
                     value={location}
                     onChange={(e) => setLocation(e.target.value)}
-                    className="w-full border border-[#EFE3D3] bg-[#FAF4EC]/40 focus:bg-white focus:border-[#EC623E] focus:ring-1 focus:ring-[#EC623E] rounded-lg px-3 py-2 text-sm outline-none text-[#11314E]"
+                    placeholder="Ingresá la ubicación (ej. Buenos Aires, Argentina)"
+                    className="w-full border border-[#EFE3D3] bg-[#FAF4EC]/40 focus:bg-white focus:border-[#EC623E] focus:ring-1 focus:ring-[#EC623E] rounded-lg px-3 py-2 text-sm outline-none text-[#11314E] placeholder:text-slate-400"
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-3 gap-3">
+                {/* Desplegable Personalizado y Estilizado para Modalidad */}
+                <div className="relative" ref={modalityDropdownRef}>
+                  <label className="block text-xs font-semibold text-[#11314E] mb-1">
+                    Modalidad <span className="text-red-500 font-bold">*</span>
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setIsModalityOpen((prev) => !prev)}
+                    className={`w-full flex items-center justify-between border rounded-lg px-2.5 py-2 text-xs font-medium outline-none transition-all cursor-pointer h-[38px] ${
+                      isModalityOpen
+                        ? 'border-[#EC623E] ring-1 ring-[#EC623E] bg-white'
+                        : 'border-[#EFE3D3] bg-[#FAF4EC]/40 hover:bg-white focus:border-[#EC623E]'
+                    }`}
+                  >
+                    <span className={modality ? 'text-[#11314E] font-semibold truncate' : 'text-slate-400 truncate'}>
+                      {modality || 'Ingresá modalidad'}
+                    </span>
+                    <ChevronDown
+                      className={`w-3.5 h-3.5 text-slate-400 shrink-0 transition-transform duration-200 ${
+                        isModalityOpen ? 'rotate-180 text-[#EC623E]' : ''
+                      }`}
+                    />
+                  </button>
+
+                  {isModalityOpen && (
+                    <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-[#EFE3D3] rounded-xl shadow-xl py-1 z-30 overflow-hidden">
+                      {MODALITY_OPTIONS.map((opt) => {
+                        const isSelected = modality === opt.value;
+                        return (
+                          <button
+                            key={opt.value}
+                            type="button"
+                            onClick={() => {
+                              setModality(opt.value);
+                              setIsModalityOpen(false);
+                            }}
+                            className={`w-full text-left px-3 py-2 text-xs flex items-center justify-between transition-colors cursor-pointer ${
+                              isSelected
+                                ? 'bg-[#FAF4EC] text-[#EC623E] font-bold'
+                                : 'text-[#11314E] hover:bg-[#FAF4EC]/70 hover:text-[#EC623E]'
+                            }`}
+                          >
+                            <div>
+                              <p className="font-semibold text-xs leading-tight">{opt.label}</p>
+                              <p className="text-[10px] text-slate-400 font-normal mt-0.5">{opt.desc}</p>
+                            </div>
+                            {isSelected && <Check className="w-3.5 h-3.5 text-[#EC623E] shrink-0" />}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
                 <div>
                   <label className="block text-xs font-semibold text-[#11314E] mb-1">
-                    Experiencia mínima (años)
+                    Experiencia mín.
                   </label>
                   <input
                     type="number"
                     min={0}
                     value={minExp}
-                    onChange={(e) => setMinExp(Number(e.target.value))}
-                    className="w-full border border-[#EFE3D3] bg-[#FAF4EC]/40 focus:bg-white focus:border-[#EC623E] focus:ring-1 focus:ring-[#EC623E] rounded-lg px-3 py-2 text-sm outline-none text-[#11314E]"
+                    onChange={(e) => setMinExp(e.target.value === '' ? '' : Number(e.target.value))}
+                    placeholder="Ingresá años"
+                    className="w-full border border-[#EFE3D3] bg-[#FAF4EC]/40 focus:bg-white focus:border-[#EC623E] focus:ring-1 focus:ring-[#EC623E] rounded-lg px-2.5 py-2 text-xs outline-none text-[#11314E] placeholder:text-slate-400 h-[38px] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                   />
                 </div>
                 <div>
@@ -752,22 +888,22 @@ export const Jobs: React.FC = () => {
                   <input
                     value={salaryRange}
                     onChange={(e) => setSalaryRange(e.target.value)}
-                    placeholder="Opcional"
-                    className="w-full border border-[#EFE3D3] bg-[#FAF4EC]/40 focus:bg-white focus:border-[#EC623E] focus:ring-1 focus:ring-[#EC623E] rounded-lg px-3 py-2 text-sm outline-none text-[#11314E]"
+                    placeholder="Ingresá rango"
+                    className="w-full border border-[#EFE3D3] bg-[#FAF4EC]/40 focus:bg-white focus:border-[#EC623E] focus:ring-1 focus:ring-[#EC623E] rounded-lg px-2.5 py-2 text-xs outline-none text-[#11314E] placeholder:text-slate-400 h-[38px]"
                   />
                 </div>
               </div>
 
               <div>
                 <label className="block text-xs font-semibold text-[#11314E] mb-1">
-                  Skills obligatorias (separadas por coma) *
+                  Skills obligatorias (separadas por coma) <span className="text-red-500 font-bold">*</span>
                 </label>
                 <input
                   required
                   value={requiredSkills}
                   onChange={(e) => setRequiredSkills(e.target.value)}
-                  placeholder="React, TypeScript, SQL, Inglés"
-                  className="w-full border border-[#EFE3D3] bg-[#FAF4EC]/40 focus:bg-white focus:border-[#EC623E] focus:ring-1 focus:ring-[#EC623E] rounded-lg px-3 py-2 text-sm outline-none text-[#11314E]"
+                  placeholder="Ingresá las skills obligatorias (ej. React, TypeScript, SQL, Inglés)"
+                  className="w-full border border-[#EFE3D3] bg-[#FAF4EC]/40 focus:bg-white focus:border-[#EC623E] focus:ring-1 focus:ring-[#EC623E] rounded-lg px-3 py-2 text-sm outline-none text-[#11314E] placeholder:text-slate-400"
                 />
               </div>
 
@@ -778,34 +914,43 @@ export const Jobs: React.FC = () => {
                 <input
                   value={niceSkills}
                   onChange={(e) => setNiceSkills(e.target.value)}
-                  placeholder="Power BI, Scrum"
-                  className="w-full border border-[#EFE3D3] bg-[#FAF4EC]/40 focus:bg-white focus:border-[#EC623E] focus:ring-1 focus:ring-[#EC623E] rounded-lg px-3 py-2 text-sm outline-none text-[#11314E]"
+                  placeholder="Ingresá las skills deseables (ej. Power BI, Scrum, AWS, Docker)"
+                  className="w-full border border-[#EFE3D3] bg-[#FAF4EC]/40 focus:bg-white focus:border-[#EC623E] focus:ring-1 focus:ring-[#EC623E] rounded-lg px-3 py-2 text-sm outline-none text-[#11314E] placeholder:text-slate-400"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-[#11314E] mb-1">Descripción</label>
+                <label className="block text-xs font-semibold text-[#11314E] mb-1">
+                  Descripción del puesto <span className="text-red-500 font-bold">*</span>
+                </label>
                 <textarea
+                  required
                   rows={3}
                   value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  className="w-full border border-[#EFE3D3] bg-[#FAF4EC]/40 focus:bg-white focus:border-[#EC623E] focus:ring-1 focus:ring-[#EC623E] rounded-lg px-3 py-2 text-sm outline-none text-[#11314E]"
+                  placeholder="Ingresá la descripción detallada del puesto, responsabilidades, objetivos principales y beneficios..."
+                  onChange={(e) => {
+                    setDescription(e.target.value);
+                    // Auto-expandir al hacer saltos de línea o cambiar contenido
+                    e.target.style.height = 'auto';
+                    e.target.style.height = `${e.target.scrollHeight}px`;
+                  }}
+                  className="w-full border border-[#EFE3D3] bg-[#FAF4EC]/40 focus:bg-white focus:border-[#EC623E] focus:ring-1 focus:ring-[#EC623E] rounded-lg px-3 py-2 text-sm outline-none text-[#11314E] placeholder:text-slate-400 min-h-[88px] max-h-[260px] overflow-y-auto resize-none transition-all"
                 />
               </div>
 
-              <div className="flex justify-end gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setShowModal(false)}
-                  className="px-4 py-2 text-sm text-slate-600 hover:bg-[#FAF4EC] rounded-lg cursor-pointer"
-                >
-                  Cancelar
-                </button>
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-[#EFE3D3]/70">
                 <button
                   type="submit"
-                  className="px-4 py-2 text-sm font-semibold bg-[#EC623E] hover:bg-[#D95330] text-white rounded-lg cursor-pointer shadow-sm"
+                  className="px-5 py-2.5 text-xs font-bold bg-[#EC623E] hover:bg-[#D95330] text-white rounded-xl transition-all cursor-pointer shadow-sm hover:shadow"
                 >
                   Guardar Vacante
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCloseJobModal}
+                  className="px-4 py-2.5 text-xs font-semibold text-slate-600 hover:text-[#11314E] hover:bg-[#FAF4EC] border border-[#EFE3D3] rounded-xl transition-colors cursor-pointer"
+                >
+                  Cancelar
                 </button>
               </div>
             </form>
