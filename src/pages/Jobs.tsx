@@ -34,6 +34,119 @@ const MODALITY_OPTIONS = [
   { value: 'Presencial', label: 'Presencial', desc: 'En sede u oficina física' },
 ];
 
+interface JobCardStatusDropdownProps {
+  job: Job;
+  canChange: boolean;
+  onStatusChange: (jobId: string, newStatus: JobStatus) => void;
+}
+
+const JobCardStatusDropdown: React.FC<JobCardStatusDropdownProps> = ({
+  job,
+  canChange,
+  onStatusChange,
+}) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isOpen]);
+
+  const STATUS_CONFIG: Record<
+    JobStatus,
+    { label: string; dot: string; badge: string }
+  > = {
+    open: {
+      label: 'Abierta',
+      dot: 'bg-emerald-500',
+      badge: 'bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100/80',
+    },
+    paused: {
+      label: 'Pausada',
+      dot: 'bg-amber-500',
+      badge: 'bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100/80',
+    },
+    closed: {
+      label: 'Cerrada',
+      dot: 'bg-slate-400',
+      badge: 'bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200/80',
+    },
+  };
+
+  const current = STATUS_CONFIG[job.status] || STATUS_CONFIG.open;
+
+  if (!canChange) {
+    return (
+      <span
+        className={`text-xs border rounded-md px-2.5 py-0.5 font-semibold inline-flex items-center gap-1.5 ${current.badge}`}
+      >
+        <span className={`w-1.5 h-1.5 rounded-full ${current.dot}`} />
+        {current.label}
+      </span>
+    );
+  }
+
+  return (
+    <div className="relative" ref={dropdownRef}>
+      <button
+        type="button"
+        onClick={() => setIsOpen((prev) => !prev)}
+        className={`text-xs border rounded-md px-2.5 py-1 font-semibold inline-flex items-center gap-1.5 transition-all cursor-pointer ${current.badge} ${
+          isOpen ? 'ring-1 ring-[#EC623E] border-[#EC623E]' : ''
+        }`}
+      >
+        <span className={`w-1.5 h-1.5 rounded-full ${current.dot}`} />
+        <span>{current.label}</span>
+        <ChevronDown
+          className={`w-3 h-3 transition-transform duration-200 ${
+            isOpen ? 'rotate-180 text-[#EC623E]' : 'opacity-70'
+          }`}
+        />
+      </button>
+
+      {isOpen && (
+        <div className="absolute right-0 top-full mt-1.5 w-36 bg-white border border-[#EFE3D3] rounded-xl shadow-xl py-1 z-30 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+          {(['open', 'paused', 'closed'] as JobStatus[]).map((st) => {
+            const config = STATUS_CONFIG[st];
+            const isSelected = job.status === st;
+            return (
+              <button
+                key={st}
+                type="button"
+                onClick={() => {
+                  onStatusChange(job.id, st);
+                  setIsOpen(false);
+                }}
+                className={`w-full text-left px-3 py-1.5 text-xs flex items-center justify-between transition-colors cursor-pointer ${
+                  isSelected
+                    ? 'bg-[#FAF4EC] text-[#EC623E] font-bold'
+                    : 'text-[#11314E] hover:bg-[#FAF4EC]/70 hover:text-[#EC623E]'
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <span className={`w-2 h-2 rounded-full ${config.dot}`} />
+                  <span>{config.label}</span>
+                </div>
+                {isSelected && <Check className="w-3.5 h-3.5 text-[#EC623E] shrink-0" />}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+};
+
 export const Jobs: React.FC = () => {
   const {
     jobs,
@@ -171,11 +284,44 @@ export const Jobs: React.FC = () => {
     selectedStatus !== 'all' ||
     selectedModality !== 'all';
 
+  // Control de apertura de desplegables de filtros superiores
+  const [openFilter, setOpenFilter] = useState<'dept' | 'status' | 'modality' | null>(null);
+  const filterDropdownsRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        filterDropdownsRef.current &&
+        !filterDropdownsRef.current.contains(e.target as Node)
+      ) {
+        setOpenFilter(null);
+      }
+    };
+    if (openFilter) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [openFilter]);
+
   const handleResetFilters = () => {
     setSearch('');
     setSelectedDept('all');
     setSelectedStatus('all');
     setSelectedModality('all');
+    setOpenFilter(null);
+  };
+
+  const handleCardStatusChange = (jobId: string, newStatus: JobStatus) => {
+    const currentJob = jobs.find((j) => j.id === jobId);
+    updateJobStatus(jobId, newStatus);
+    toast.info(
+      'Estado de vacante actualizado',
+      `La búsqueda "${currentJob?.title || ''}" ahora está ${
+        newStatus === 'open' ? 'abierta' : newStatus === 'paused' ? 'pausada' : 'cerrada'
+      }.`
+    );
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -323,7 +469,7 @@ export const Jobs: React.FC = () => {
       </ScrollReveal>
 
       {/* Barra de Filtros Rápidos */}
-      <div className="bg-white rounded-xl border border-[#EFE3D3] p-4 shadow-xs space-y-3">
+      <div className="bg-white rounded-xl border border-[#EFE3D3] p-4 shadow-xs space-y-3 relative z-30">
         <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3">
           {/* Input de Búsqueda */}
           <div className="relative flex-1">
@@ -346,59 +492,208 @@ export const Jobs: React.FC = () => {
             )}
           </div>
 
-          {/* Desplegables de Filtro */}
-          <div className="flex items-center gap-2 flex-wrap">
+          {/* Desplegables de Filtro Estilizados */}
+          <div className="flex items-center gap-2 flex-wrap" ref={filterDropdownsRef}>
             {/* Filtro por Departamento */}
-            <div className="flex items-center gap-1.5 bg-[#FAF4EC]/70 border border-[#EFE3D3] rounded-lg px-2.5 py-1.5 text-xs">
-              <span className="text-slate-500 font-medium">Área:</span>
-              <select
-                value={selectedDept}
-                onChange={(e) => setSelectedDept(e.target.value)}
-                className="bg-transparent text-[#11314E] font-semibold outline-none cursor-pointer"
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setOpenFilter(openFilter === 'dept' ? null : 'dept')}
+                className={`flex items-center gap-1.5 bg-[#FAF4EC]/70 hover:bg-white border rounded-lg px-2.5 py-1.5 text-xs transition-all cursor-pointer ${
+                  openFilter === 'dept'
+                    ? 'border-[#EC623E] ring-1 ring-[#EC623E] bg-white'
+                    : 'border-[#EFE3D3]'
+                }`}
               >
-                <option value="all">Todas ({jobs.length})</option>
-                {departments
-                  .filter((d) => d !== 'all')
-                  .map((dept) => (
-                    <option key={dept} value={dept}>
-                      {dept} ({jobs.filter((j) => j.department === dept).length})
-                    </option>
-                  ))}
-              </select>
+                <span className="text-slate-500 font-medium">Área:</span>
+                <span className="text-[#11314E] font-semibold">
+                  {selectedDept === 'all'
+                    ? `Todas (${jobs.length})`
+                    : `${selectedDept} (${jobs.filter((j) => j.department === selectedDept).length})`}
+                </span>
+                <ChevronDown
+                  className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${
+                    openFilter === 'dept' ? 'rotate-180 text-[#EC623E]' : ''
+                  }`}
+                />
+              </button>
+
+              {openFilter === 'dept' && (
+                <div className="absolute left-0 top-full mt-1.5 min-w-[200px] max-h-60 overflow-y-auto bg-white border border-[#EFE3D3] rounded-xl shadow-xl py-1 z-30 animate-in fade-in zoom-in-95 duration-150">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedDept('all');
+                      setOpenFilter(null);
+                    }}
+                    className={`w-full text-left px-3 py-2 text-xs flex items-center justify-between transition-colors cursor-pointer ${
+                      selectedDept === 'all'
+                        ? 'bg-[#FAF4EC] text-[#EC623E] font-bold'
+                        : 'text-[#11314E] hover:bg-[#FAF4EC]/70 hover:text-[#EC623E]'
+                    }`}
+                  >
+                    <span>Todas ({jobs.length})</span>
+                    {selectedDept === 'all' && <Check className="w-3.5 h-3.5 text-[#EC623E] shrink-0" />}
+                  </button>
+                  {departments
+                    .filter((d) => d !== 'all')
+                    .map((dept) => {
+                      const count = jobs.filter((j) => j.department === dept).length;
+                      const isSelected = selectedDept === dept;
+                      return (
+                        <button
+                          key={dept}
+                          type="button"
+                          onClick={() => {
+                            setSelectedDept(dept);
+                            setOpenFilter(null);
+                          }}
+                          className={`w-full text-left px-3 py-2 text-xs flex items-center justify-between transition-colors cursor-pointer ${
+                            isSelected
+                              ? 'bg-[#FAF4EC] text-[#EC623E] font-bold'
+                              : 'text-[#11314E] hover:bg-[#FAF4EC]/70 hover:text-[#EC623E]'
+                          }`}
+                        >
+                          <span>
+                            {dept} ({count})
+                          </span>
+                          {isSelected && <Check className="w-3.5 h-3.5 text-[#EC623E] shrink-0" />}
+                        </button>
+                      );
+                    })}
+                </div>
+              )}
             </div>
 
             {/* Filtro por Estado */}
-            <div className="flex items-center gap-1.5 bg-[#FAF4EC]/70 border border-[#EFE3D3] rounded-lg px-2.5 py-1.5 text-xs">
-              <span className="text-slate-500 font-medium">Estado:</span>
-              <select
-                value={selectedStatus}
-                onChange={(e) => setSelectedStatus(e.target.value)}
-                className="bg-transparent text-[#11314E] font-semibold outline-none cursor-pointer"
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setOpenFilter(openFilter === 'status' ? null : 'status')}
+                className={`flex items-center gap-1.5 bg-[#FAF4EC]/70 hover:bg-white border rounded-lg px-2.5 py-1.5 text-xs transition-all cursor-pointer ${
+                  openFilter === 'status'
+                    ? 'border-[#EC623E] ring-1 ring-[#EC623E] bg-white'
+                    : 'border-[#EFE3D3]'
+                }`}
               >
-                <option value="all">Todos ({jobs.length})</option>
-                <option value="open">Abiertas ({openJobsCount})</option>
-                <option value="paused">Pausadas ({pausedJobsCount})</option>
-                <option value="closed">Cerradas ({closedJobsCount})</option>
-              </select>
+                <span className="text-slate-500 font-medium">Estado:</span>
+                <span className="text-[#11314E] font-semibold">
+                  {selectedStatus === 'all'
+                    ? `Todos (${jobs.length})`
+                    : selectedStatus === 'open'
+                    ? `Abiertas (${openJobsCount})`
+                    : selectedStatus === 'paused'
+                    ? `Pausadas (${pausedJobsCount})`
+                    : `Cerradas (${closedJobsCount})`}
+                </span>
+                <ChevronDown
+                  className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${
+                    openFilter === 'status' ? 'rotate-180 text-[#EC623E]' : ''
+                  }`}
+                />
+              </button>
+
+              {openFilter === 'status' && (
+                <div className="absolute left-0 top-full mt-1.5 min-w-[170px] bg-white border border-[#EFE3D3] rounded-xl shadow-xl py-1 z-30 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+                  {[
+                    { key: 'all', label: `Todos (${jobs.length})` },
+                    { key: 'open', label: `Abiertas (${openJobsCount})`, dot: 'bg-emerald-500' },
+                    { key: 'paused', label: `Pausadas (${pausedJobsCount})`, dot: 'bg-amber-500' },
+                    { key: 'closed', label: `Cerradas (${closedJobsCount})`, dot: 'bg-slate-400' },
+                  ].map((item) => {
+                    const isSelected = selectedStatus === item.key;
+                    return (
+                      <button
+                        key={item.key}
+                        type="button"
+                        onClick={() => {
+                          setSelectedStatus(item.key);
+                          setOpenFilter(null);
+                        }}
+                        className={`w-full text-left px-3 py-2 text-xs flex items-center justify-between transition-colors cursor-pointer ${
+                          isSelected
+                            ? 'bg-[#FAF4EC] text-[#EC623E] font-bold'
+                            : 'text-[#11314E] hover:bg-[#FAF4EC]/70 hover:text-[#EC623E]'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2">
+                          {item.dot && <span className={`w-2 h-2 rounded-full ${item.dot}`} />}
+                          <span>{item.label}</span>
+                        </div>
+                        {isSelected && <Check className="w-3.5 h-3.5 text-[#EC623E] shrink-0" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
             {/* Filtro por Modalidad */}
-            <div className="flex items-center gap-1.5 bg-[#FAF4EC]/70 border border-[#EFE3D3] rounded-lg px-2.5 py-1.5 text-xs">
-              <span className="text-slate-500 font-medium">Modalidad:</span>
-              <select
-                value={selectedModality}
-                onChange={(e) => setSelectedModality(e.target.value)}
-                className="bg-transparent text-[#11314E] font-semibold outline-none cursor-pointer"
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setOpenFilter(openFilter === 'modality' ? null : 'modality')}
+                className={`flex items-center gap-1.5 bg-[#FAF4EC]/70 hover:bg-white border rounded-lg px-2.5 py-1.5 text-xs transition-all cursor-pointer ${
+                  openFilter === 'modality'
+                    ? 'border-[#EC623E] ring-1 ring-[#EC623E] bg-white'
+                    : 'border-[#EFE3D3]'
+                }`}
               >
-                <option value="all">Todas</option>
-                {modalities
-                  .filter((m) => m !== 'all')
-                  .map((mod) => (
-                    <option key={mod} value={mod}>
-                      {mod}
-                    </option>
-                  ))}
-              </select>
+                <span className="text-slate-500 font-medium">Modalidad:</span>
+                <span className="text-[#11314E] font-semibold">
+                  {selectedModality === 'all' ? 'Todas' : selectedModality}
+                </span>
+                <ChevronDown
+                  className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${
+                    openFilter === 'modality' ? 'rotate-180 text-[#EC623E]' : ''
+                  }`}
+                />
+              </button>
+
+              {openFilter === 'modality' && (
+                <div className="absolute left-0 top-full mt-1.5 min-w-[160px] bg-white border border-[#EFE3D3] rounded-xl shadow-xl py-1 z-30 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedModality('all');
+                      setOpenFilter(null);
+                    }}
+                    className={`w-full text-left px-3 py-2 text-xs flex items-center justify-between transition-colors cursor-pointer ${
+                      selectedModality === 'all'
+                        ? 'bg-[#FAF4EC] text-[#EC623E] font-bold'
+                        : 'text-[#11314E] hover:bg-[#FAF4EC]/70 hover:text-[#EC623E]'
+                    }`}
+                  >
+                    <span>Todas</span>
+                    {selectedModality === 'all' && (
+                      <Check className="w-3.5 h-3.5 text-[#EC623E] shrink-0" />
+                    )}
+                  </button>
+                  {modalities
+                    .filter((m) => m !== 'all')
+                    .map((mod) => {
+                      const isSelected = selectedModality === mod;
+                      return (
+                        <button
+                          key={mod}
+                          type="button"
+                          onClick={() => {
+                            setSelectedModality(mod);
+                            setOpenFilter(null);
+                          }}
+                          className={`w-full text-left px-3 py-2 text-xs flex items-center justify-between transition-colors cursor-pointer ${
+                            isSelected
+                              ? 'bg-[#FAF4EC] text-[#EC623E] font-bold'
+                              : 'text-[#11314E] hover:bg-[#FAF4EC]/70 hover:text-[#EC623E]'
+                          }`}
+                        >
+                          <span>{mod}</span>
+                          {isSelected && <Check className="w-3.5 h-3.5 text-[#EC623E] shrink-0" />}
+                        </button>
+                      );
+                    })}
+                </div>
+              )}
             </div>
 
             {/* Limpiar Filtros */}
@@ -443,7 +738,7 @@ export const Jobs: React.FC = () => {
           </button>
         </div>
       ) : (
-        <ScrollReveal staggerChildren className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        <ScrollReveal staggerChildren className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 relative z-10">
           {filteredJobs.map((job) => {
             const count = applications.filter((a) => a.job_id === job.id).length;
             const jobApps = applications.filter((a) => a.job_id === job.id);
@@ -451,12 +746,6 @@ export const Jobs: React.FC = () => {
               count > 0
                 ? Math.round(jobApps.reduce((acc, a) => acc + a.ats_score, 0) / count)
                 : 0;
-
-            const statusColors: Record<JobStatus, string> = {
-              open: 'bg-emerald-50 text-emerald-800 border-emerald-200',
-              paused: 'bg-amber-50 text-amber-800 border-amber-200',
-              closed: 'bg-slate-100 text-slate-700 border-slate-200',
-            };
 
             return (
               <div
@@ -470,40 +759,11 @@ export const Jobs: React.FC = () => {
                       {job.department}
                     </span>
 
-                    {permissions.canChangeJobStatus ? (
-                      <select
-                        value={job.status}
-                        onChange={(e) => {
-                          const newStatus = e.target.value as JobStatus;
-                          updateJobStatus(job.id, newStatus);
-                          toast.info(
-                            'Estado de vacante actualizado',
-                            `La búsqueda "${job.title}" ahora está ${
-                              newStatus === 'open'
-                                ? 'abierta'
-                                : newStatus === 'paused'
-                                ? 'pausada'
-                                : 'cerrada'
-                            }.`
-                          );
-                        }}
-                        className={`text-xs border rounded-md px-2 py-0.5 font-semibold cursor-pointer outline-none transition-colors ${statusColors[job.status]}`}
-                      >
-                        <option value="open">Abierta</option>
-                        <option value="paused">Pausada</option>
-                        <option value="closed">Cerrada</option>
-                      </select>
-                    ) : (
-                      <span
-                        className={`text-xs border rounded-md px-2.5 py-0.5 font-semibold ${statusColors[job.status]}`}
-                      >
-                        {job.status === 'open'
-                          ? 'Abierta'
-                          : job.status === 'paused'
-                          ? 'Pausada'
-                          : 'Cerrada'}
-                      </span>
-                    )}
+                    <JobCardStatusDropdown
+                      job={job}
+                      canChange={permissions.canChangeJobStatus}
+                      onStatusChange={handleCardStatusChange}
+                    />
                   </div>
 
                   {/* Título de la vacante */}
